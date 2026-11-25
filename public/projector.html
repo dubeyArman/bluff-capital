@@ -583,6 +583,7 @@
     const socket = io({ transports: ['websocket'] });
     let currentRound = 1;
     let gameState = 'waiting';
+    let currentProjectorView = 'auto'; // 'auto' | 'leaderboard'
     let leaderboard = [];
     let pitchVisible = false;
     let currentCompanies = [];
@@ -884,6 +885,7 @@
 
       if (data.seconds > 0) {
         isStageCountdownActive = true;
+        currentProjectorView = 'auto'; // Reset view so countdown and round view appear
         overlay.style.display = 'flex';
         if (badge) badge.textContent = `ROUND ${data.round}`;
         if (theme) theme.textContent = data.theme || '';
@@ -912,6 +914,11 @@
       gameState = data.state;
       if (data.round) currentRound = data.round;
       if (data.pitchVisible !== undefined) pitchVisible = !!data.pitchVisible;
+      if (data.projectorView === 'leaderboard') {
+        currentProjectorView = 'leaderboard';
+      } else if (data.projectorView === 'game') {
+        currentProjectorView = 'auto';
+      }
 
       // Close countdown overlay only if not actively animating
       if (!isStageCountdownActive) {
@@ -930,16 +937,20 @@
       const pct = tot > 0 ? (sub / tot) * 100 : 0;
       $('#stage-progress-fill').style.width = pct + '%';
 
-      if (gameState === 'waiting') {
-        switchView('lobby');
-      } else if (gameState.endsWith('_invest')) {
-        renderInvest(data);
-        switchView('invest');
-      } else if (gameState.endsWith('_results')) {
-        switchView('reveal');
-      } else if (gameState === 'game_over') {
+      if (currentProjectorView === 'leaderboard') {
         switchView('leaderboard');
-        triggerConfetti();
+      } else {
+        if (gameState === 'waiting') {
+          switchView('lobby');
+        } else if (gameState.endsWith('_invest')) {
+          renderInvest(data);
+          switchView('invest');
+        } else if (gameState.endsWith('_results')) {
+          switchView('reveal');
+        } else if (gameState === 'game_over') {
+          switchView('leaderboard');
+          triggerConfetti();
+        }
       }
     });
 
@@ -980,18 +991,37 @@
 
     socket.on('results_reveal', (data) => {
       renderReveal(data);
-      switchView('reveal');
+      if (currentProjectorView !== 'leaderboard') {
+        switchView('reveal');
+      }
       // Stock reveal stays on screen! No auto-switch to leaderboard!
     });
 
     socket.on('show_leaderboard', (data) => {
+      currentProjectorView = 'leaderboard';
       if (data && data.leaderboard) renderLeaderboardView(data.leaderboard);
       switchView('leaderboard');
       triggerConfetti();
     });
 
+    socket.on('resume_projector_game', () => {
+      currentProjectorView = 'auto';
+      if (gameState === 'waiting') {
+        switchView('lobby');
+      } else if (gameState.endsWith('_invest')) {
+        switchView('invest');
+      } else if (gameState.endsWith('_results')) {
+        switchView('reveal');
+      } else if (gameState === 'game_over') {
+        switchView('leaderboard');
+      }
+    });
+
     socket.on('leaderboard_update', (data) => {
       renderLeaderboardView(data.leaderboard || []);
+      if (currentProjectorView === 'leaderboard') {
+        switchView('leaderboard');
+      }
     });
 
     function applyState(data) {
@@ -1029,6 +1059,17 @@
             else wrap.classList.remove('warning');
           }
         }
+      }
+
+      if (data.projectorView === 'leaderboard') {
+        currentProjectorView = 'leaderboard';
+      } else if (data.projectorView === 'game') {
+        currentProjectorView = 'auto';
+      }
+
+      if (currentProjectorView === 'leaderboard') {
+        switchView('leaderboard');
+        return;
       }
 
       if (data.state !== gameState) {

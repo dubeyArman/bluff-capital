@@ -502,6 +502,11 @@
     }
   }
 
+  function showBankruptModal() {
+    const modal = $('#bankrupt-modal');
+    if (modal) modal.style.display = 'flex';
+  }
+
   // ---- Lobby ----
   function updateLobby() {
     if ($('#lobby-team-name')) $('#lobby-team-name').textContent = teamName;
@@ -523,8 +528,8 @@
     if ($('#invest-round-badge')) $('#invest-round-badge').textContent = 'Round ' + roundNum;
     if ($('#invest-round-theme')) $('#invest-round-theme').textContent = roundThemes[roundNum] || '';
     if ($('#invest-capital')) {
-      if (capital < 0) {
-        $('#invest-capital').innerHTML = `<span style="color:var(--red);">${formatCurrency(capital)}</span> <span style="font-size:0.75rem;background:rgba(239,68,68,0.25);color:var(--red);padding:2px 8px;border-radius:6px;border:1px solid var(--red);font-weight:700;">DEBT</span>`;
+      if (capital <= 0) {
+        $('#invest-capital').innerHTML = `<span style="color:var(--red);">₹0</span> <span style="font-size:0.75rem;background:rgba(239,68,68,0.25);color:var(--red);padding:2px 8px;border-radius:6px;border:1px solid var(--red);font-weight:700;">EXHAUSTED</span>`;
       } else {
         $('#invest-capital').textContent = formatCurrency(capital);
         $('#invest-capital').style.color = '';
@@ -535,6 +540,38 @@
     renderCompanyCards();
     updateAllocationBar();
     updateLockButton();
+
+    // If capital exhausted, enforce spectator mode and display bankrupt modal
+    if (capital <= 0) {
+      showBankruptModal();
+      $$('.invest-slider').forEach((s) => (s.disabled = true));
+      $$('.invest-pct-input').forEach((s) => (s.disabled = true));
+      $$('.btn-preset').forEach((b) => (b.disabled = true));
+      const btn = $('#btn-lock');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '🚫 Oops! Better luck next time! Wait for tournament to end.';
+        btn.style.background = '#451219';
+        btn.style.borderColor = '#ef4444';
+        btn.style.color = '#fca5a5';
+      }
+      let banner = $('#invest-bankrupt-banner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'invest-bankrupt-banner';
+        banner.style.cssText = 'background:rgba(239,68,68,0.15);border:2px solid #ef4444;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.25rem;text-align:center;color:#fca5a5;font-weight:700;font-size:0.95rem;';
+        banner.innerHTML = '⚠️ <strong>Oops! Better luck next time! Wait for tournament to end.</strong><br><span style="font-size:0.82rem;color:#94a3b8;font-weight:400;">Your capital has been exhausted. You cannot place investments in upcoming rounds.</span>';
+        const container = $('.invest-container');
+        if (container && container.firstChild) {
+          container.insertBefore(banner, container.firstChild);
+        }
+      } else {
+        banner.style.display = 'block';
+      }
+    } else {
+      const banner = $('#invest-bankrupt-banner');
+      if (banner) banner.style.display = 'none';
+    }
 
     const fill = $('#timer-bar-fill');
     if (fill) {
@@ -806,6 +843,11 @@
   }
 
   async function lockInvestment() {
+    if (capital <= 0) {
+      showBankruptModal();
+      toast('Oops! Better luck next time! Wait for tournament to end.', 'error');
+      return;
+    }
     const total = allocations.reduce((s, v) => s + v, 0);
     if (total <= 0) {
       toast('Please allocate percentage across companies, or hold cash', 'error');
@@ -958,6 +1000,12 @@
 
     capital = newCap;
     saveSession();
+
+    if (newCap <= 0) {
+      setTimeout(() => {
+        showBankruptModal();
+      }, 1600);
+    }
 
     const isFinalRound = (data.round && data.round >= 4) || currentRound >= 4 || gameState === 'game_over';
 

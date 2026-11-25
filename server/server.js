@@ -72,8 +72,9 @@ app.use(async (req, res, next) => {
 });
 
 const HOST_PASSWORD = 'bluffcapital2026';
-let STARTING_CAPITAL = 10000;
+const STARTING_CAPITAL = 10000;
 const TIMER_SECONDS = 90;
+let projectorView = 'auto';
 const PORT = process.env.PORT || 3000;
 
 function getLocalIp() {
@@ -600,6 +601,7 @@ function broadcastState() {
     seconds: isInvestPhase() ? timerRemaining : null,
     total: TIMER_SECONDS,
     startingCapital: STARTING_CAPITAL,
+    projectorView: projectorView || 'auto',
     teamCount: teams.size,
     totalTeams: teams.size,
     submittedCount: getSubmittedCount(),
@@ -713,10 +715,37 @@ function calculateResults(roundNum) {
     let newCapital = 0;
     let heldCash = false;
 
-    // Base principle capital for investment:
-    // If capitalBefore is positive, they invest from their active capital.
-    // If capitalBefore <= 0 (in debt), their allocations are based on the principle starting capital as margin debt!
-    const baseCapital = capitalBefore > 0 ? capitalBefore : STARTING_CAPITAL;
+    // Bankrupt check: If team has 0 capital, they cannot invest and remain at 0
+    if (capitalBefore <= 0) {
+      team.capital = 0;
+      team.isBankrupt = true;
+      const companyResults = roundData.companies.map((company) => ({
+        name: company.name,
+        shortName: company.shortName,
+        returnPct: company.returnPct,
+        isBluff: !!company.isBluff,
+        allocated: 0,
+        amountInvested: 0,
+        amountAfter: 0,
+        gained: 0,
+      }));
+
+      const tRes = {
+        teamId: team.id,
+        name: team.name,
+        leaderName: team.leaderName || '',
+        enrollmentNo: team.enrollmentNo || '',
+        capitalBefore: 0,
+        capitalAfter: 0,
+        isBankrupt: true,
+        heldCash: true,
+        allocations: [0, 0, 0, 0],
+        companyResults,
+      };
+      teamResults.push(tRes);
+      teamResultsMap[team.id] = tRes;
+      continue;
+    }
 
     // Check if team submitted allocations or held cash
     if (!rawAllocations || !Array.isArray(rawAllocations)) {
@@ -752,7 +781,7 @@ function calculateResults(roundNum) {
         enrollmentNo: team.enrollmentNo || '',
         capitalBefore,
         capitalAfter: newCapital,
-        isDebt: newCapital < 0,
+        isBankrupt: false,
         heldCash: true,
         allocations: [0, 0, 0, 0],
         companyResults,
@@ -764,16 +793,17 @@ function calculateResults(roundNum) {
       const allocations = rawAllocations;
       const totalInvestedPct = allocations.reduce((a, b) => a + b, 0);
       const cashPct = Math.max(0, 100 - totalInvestedPct);
+      const cashPreserved = (cashPct / 100) * capitalBefore;
+      newCapital = cashPreserved;
 
-      let totalGained = 0;
       const companyResults = roundData.companies.map((company, i) => {
         const pctAllocated = allocations[i] || 0;
-        const amountInvested = (pctAllocated / 100) * baseCapital;
-        // If company is bluff, return is -100%, investment goes to 0 (loss of entire amount invested)
+        const amountInvested = (pctAllocated / 100) * capitalBefore;
+        // If company is bluff, return is -100%, investment goes to 0
         const returnMultiplier = company.isBluff ? 0 : (1 + company.returnPct / 100);
         const amountAfter = amountInvested * returnMultiplier;
         const gained = amountAfter - amountInvested;
-        totalGained += gained;
+        newCapital += amountAfter;
 
         return {
           name: company.name,
@@ -787,9 +817,10 @@ function calculateResults(roundNum) {
         };
       });
 
-      // Capital accumulates across all rounds (can go negative into debt)
-      newCapital = Math.round((capitalBefore + totalGained) * 100) / 100;
+      // Capital cannot drop below 0: if <= 0, exhausted / bankrupt
+      newCapital = Math.max(0, Math.round(newCapital * 100) / 100);
       team.capital = newCapital;
+      team.isBankrupt = newCapital <= 0;
 
       team.history.push({
         round: roundNum,
@@ -808,7 +839,7 @@ function calculateResults(roundNum) {
         enrollmentNo: team.enrollmentNo || '',
         capitalBefore,
         capitalAfter: newCapital,
-        isDebt: newCapital < 0,
+        isBankrupt: newCapital <= 0,
         heldCash: false,
         cashReservePct: cashPct,
         allocations,
@@ -980,6 +1011,13 @@ app.post(['/api/invest', '/invest'], async (req, res) => {
     return res.status(404).json({ error: 'Team not registered. Please register or login.' });
   }
 
+  if (team.capital <= 0) {
+    return res.status(403).json({
+      error: 'Oops! Better luck next time! Wait for tournament to end.',
+      isBankrupt: true
+    });
+  }
+
   if (!isInvestPhase()) {
     return res.status(400).json({ error: `Not in an investment phase. Current state: ${gameState}` });
   }
@@ -1088,6 +1126,7 @@ app.get(['/api/state', '/state'], (req, res) => {
     seconds: isInvestPhase() ? timerRemaining : null,
     total: TIMER_SECONDS,
     startingCapital: STARTING_CAPITAL,
+    projectorView: projectorView || 'auto',
     teamCount: teams.size,
     totalTeams: teams.size,
     submittedCount: getSubmittedCount(),
@@ -1484,6 +1523,7 @@ app.post(['/api/host/round/reveal', '/host/round/reveal', '/round/reveal'], asyn
   const reqRound = parseInt(req.body.round, 10);
   const roundNum = reqRound || currentRoundIndex() || 1;
   stopTimer();
+  projectorView = 'reveal';
   gameState = `round_${roundNum}_results`;
   roundStatuses[roundNum] = 'ended';
   pitchVisible = true;
@@ -1507,6 +1547,7 @@ app.post(['/api/host/round/leaderboard', '/host/round/leaderboard', '/round/lead
   const reqRound = parseInt(req.body.round, 10);
   const roundNum = reqRound || currentRoundIndex() || 1;
   const lb = getLeaderboard();
+  projectorView = 'leaderboard';
   if (roundNum === 4) {
     gameState = 'game_over';
     io.emit('game_over', { leaderboard: lb });
@@ -1521,6 +1562,22 @@ app.post(['/api/host/round/leaderboard', '/host/round/leaderboard', '/round/lead
     round: roundNum,
     leaderboard: lb
   });
+});
+
+// Dedicated Projector View Switcher Endpoint
+app.post(['/api/host/projector/view', '/host/projector/view'], async (req, res) => {
+  if (!verifyHost(req, res)) return;
+  const { view } = req.body;
+  const lb = getLeaderboard();
+  if (view === 'leaderboard') {
+    projectorView = 'leaderboard';
+    io.emit('show_leaderboard', { round: currentRoundIndex() || 1, leaderboard: lb });
+  } else {
+    projectorView = 'auto';
+    io.emit('resume_projector_game', { state: gameState });
+  }
+  broadcastState();
+  return res.json({ success: true, projectorView });
 });
 
 // Host: Set Principle Starting Capital (Before round or tournament)
@@ -1731,6 +1788,7 @@ io.on('connection', (socket) => {
     seconds: timerRemaining,
     total: TIMER_SECONDS,
     startingCapital: STARTING_CAPITAL,
+    projectorView: projectorView || 'auto',
     teamCount: teams.size,
     totalTeams: teams.size,
     submittedCount: getSubmittedCount(),

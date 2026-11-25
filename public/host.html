@@ -499,35 +499,13 @@
       <div class="dash-logo">BLUFF <span>CAPITAL</span> &nbsp;•&nbsp; <small style="font-size:0.8rem;color:var(--gray);font-weight:400;">Host Management Suite</small></div>
       <div class="top-actions">
         <div class="state-badge" id="game-state-badge">WAITING</div>
+        <button type="button" class="btn btn-gold" id="btn-show-stage-lb" onclick="setProjectorView('leaderboard')" style="box-shadow:0 0 15px rgba(245,166,35,0.4);">🏆 SHOW LEADERBOARD ON STAGE</button>
+        <button type="button" class="btn btn-outline" id="btn-resume-stage-game" onclick="setProjectorView('game')">📽️ RETURN TO GAME ON STAGE</button>
         <a href="/" target="_blank" class="btn btn-outline">📱 Player App</a>
         <a href="/projector" target="_blank" class="btn btn-outline">📽️ Open Projector View</a>
         <button class="btn btn-outline" id="btn-export-csv">📥 Export CSV</button>
       </div>
     </header>
-
-    <!-- EVENT STARTING CAPITAL SETTING -->
-    <div class="capital-config-card" style="background:var(--card);border:1px solid rgba(245,166,35,0.3);border-radius:16px;padding:1.25rem 1.75rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
-      <div style="display:flex;align-items:center;gap:1rem;">
-        <span style="font-size:1.8rem;">💼</span>
-        <div>
-          <div style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1.15rem;color:#fff;">Principle Starting Capital</div>
-          <div style="color:var(--gray);font-size:0.85rem;">Principle capital allocated to all syndicates from Round 1. Debt margin activates if depleted.</div>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
-        <div style="display:flex;align-items:center;gap:6px;">
-          <button type="button" class="btn btn-outline" style="padding:6px 12px;font-size:0.85rem;" onclick="setStartingCapQuick(10000)">₹10k</button>
-          <button type="button" class="btn btn-outline" style="padding:6px 12px;font-size:0.85rem;" onclick="setStartingCapQuick(25000)">₹25k</button>
-          <button type="button" class="btn btn-outline" style="padding:6px 12px;font-size:0.85rem;" onclick="setStartingCapQuick(50000)">₹50k</button>
-          <button type="button" class="btn btn-outline" style="padding:6px 12px;font-size:0.85rem;" onclick="setStartingCapQuick(100000)">₹100k</button>
-        </div>
-        <div style="position:relative;display:flex;align-items:center;">
-          <span style="position:absolute;left:12px;color:var(--gold);font-weight:700;">₹</span>
-          <input type="number" id="input-starting-cap" value="10000" min="1000" step="1000" style="background:#0b1120;border:1px solid var(--border);border-radius:8px;padding:8px 12px 8px 28px;color:#fff;font-weight:700;font-size:1rem;width:140px;">
-        </div>
-        <button type="button" class="btn btn-gold" id="btn-save-starting-cap" onclick="applyStartingCapital()">💾 Set Capital for All Teams</button>
-      </div>
-    </div>
 
     <!-- 4-ROUND STAGE & GAME CONTROL MATRIX -->
     <div class="matrix-card">
@@ -908,26 +886,14 @@
       } catch (e) {}
     }
 
-    window.applyStartingCapital = async function() {
-      const input = document.getElementById('input-starting-cap');
-      const val = parseInt(input ? input.value : 0, 10);
-      if (!val || val <= 0) {
-        toast('Please enter a valid starting capital amount (e.g. 10000).', 'error');
-        return;
-      }
+    window.setProjectorView = async function(view) {
       try {
-        const res = await hostApi('POST', '/set-starting-capital', { amount: val });
-        toast(res.message || `Starting capital updated to ₹${val.toLocaleString('en-IN')}!`, 'success');
+        const res = await hostApi('POST', '/projector/view', { view });
+        toast(res.message || `Stage Projector switched to ${view}!`, 'success');
         refreshState();
       } catch (e) {
-        toast(e.message || 'Failed to update starting capital', 'error');
+        toast(e.message || 'Failed to switch stage view', 'error');
       }
-    };
-
-    window.setStartingCapQuick = function(amt) {
-      const input = document.getElementById('input-starting-cap');
-      if (input) input.value = amt;
-      window.applyStartingCapital();
     };
 
     window.matrixAction = async function(round, action) {
