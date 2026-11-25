@@ -1040,8 +1040,8 @@ app.post(['/api/invest', '/invest'], async (req, res) => {
   }
 
   const sum = allocations.reduce((a, b) => a + b, 0);
-  if (sum <= 0 || sum > 100) {
-    return res.status(400).json({ error: `Portfolio allocations must total between 1% and 100%. Current sum: ${sum}%.` });
+  if (sum < 0 || sum > 100) {
+    return res.status(400).json({ error: `Portfolio allocations cannot exceed 100%. Current sum: ${sum}%.` });
   }
 
   team.investments[roundNum] = allocations;
@@ -1506,13 +1506,21 @@ app.post(['/api/host/round/end', '/host/round/end', '/round/end'], async (req, r
   stopTimer();
   autoLockInvestments();
   if (roundNum) roundStatuses[roundNum] = 'ended';
+  gameState = `round_${roundNum}_ended`;
+  calculateResults(roundNum);
+  io.emit('round_ended_buffer', {
+    round: roundNum,
+    nextRound: roundNum < 4 ? roundNum + 1 : null,
+    message: `Round ${roundNum} Concluded! Entering next phase...`
+  });
   broadcastState();
   broadcastLeaderboard();
   saveStateToRemote();
   return res.json({
     success: true,
     round: roundNum,
-    message: `Round ${roundNum || ''} ended. All portfolios locked in (unallocated funds held as cash).`
+    state: gameState,
+    message: `Round ${roundNum || ''} ended. All portfolios locked in (unallocated funds held as cash). Buffer screen active.`
   });
 });
 
@@ -1546,6 +1554,7 @@ app.post(['/api/host/round/leaderboard', '/host/round/leaderboard', '/round/lead
   loadStateFromDisk();
   const reqRound = parseInt(req.body.round, 10);
   const roundNum = reqRound || currentRoundIndex() || 1;
+  calculateResults(roundNum);
   const lb = getLeaderboard();
   projectorView = 'leaderboard';
   if (roundNum === 4) {
@@ -1553,7 +1562,7 @@ app.post(['/api/host/round/leaderboard', '/host/round/leaderboard', '/round/lead
     io.emit('game_over', { leaderboard: lb });
   }
   // Dedicated event specifically for stage projector display (prevents phone flickering)
-  io.emit('show_leaderboard', { round: roundNum, leaderboard: lb });
+  io.emit('show_leaderboard', { round: roundNum, leaderboard: lb, isFinal: roundNum === 4 });
   broadcastLeaderboard();
   broadcastState();
   saveStateToRemote();
@@ -1568,10 +1577,12 @@ app.post(['/api/host/round/leaderboard', '/host/round/leaderboard', '/round/lead
 app.post(['/api/host/projector/view', '/host/projector/view'], async (req, res) => {
   if (!verifyHost(req, res)) return;
   const { view } = req.body;
+  const roundNum = currentRoundIndex() || 1;
+  calculateResults(roundNum);
   const lb = getLeaderboard();
   if (view === 'leaderboard') {
     projectorView = 'leaderboard';
-    io.emit('show_leaderboard', { round: currentRoundIndex() || 1, leaderboard: lb });
+    io.emit('show_leaderboard', { round: roundNum, leaderboard: lb, isFinal: roundNum === 4 });
   } else {
     projectorView = 'auto';
     io.emit('resume_projector_game', { state: gameState });

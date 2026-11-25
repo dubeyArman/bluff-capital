@@ -335,6 +335,10 @@
       } else {
         showScreen('invest');
       }
+    } else if (gameState && (gameState.endsWith('_ended') || gameState.endsWith('_buffer'))) {
+      lastInvestRoundRendered = null;
+      updateBufferScreen();
+      showScreen('round-buffer');
     } else if (gameState && gameState.endsWith('_results')) {
       lastInvestRoundRendered = null;
       const active = document.querySelector('.screen.active');
@@ -502,6 +506,14 @@
     }
   }
 
+  function updateBufferScreen() {
+    const roundNum = currentRound || 1;
+    const badge = $('#buffer-round-badge');
+    const num = $('#buffer-round-num');
+    if (badge) badge.textContent = `Round ${roundNum} Concluded`;
+    if (num) num.textContent = roundNum;
+  }
+
   function showBankruptModal() {
     const modal = $('#bankrupt-modal');
     if (modal) modal.style.display = 'flex';
@@ -608,6 +620,7 @@
       <span class="preset-label">Quick Allocations:</span>
       <button type="button" class="btn-preset" id="preset-25">25% Each</button>
       <button type="button" class="btn-preset" id="preset-autofill">+ Fill 100%</button>
+      <button type="button" class="btn-preset" id="preset-cash">100% Safe Cash</button>
       <button type="button" class="btn-preset" id="preset-clear">Reset 0%</button>
     `;
     container.appendChild(presetsBar);
@@ -681,6 +694,14 @@
       updateLockButton();
     });
 
+    presetsBar.querySelector('#preset-cash').addEventListener('click', () => {
+      if (locked) return;
+      allocations = [0, 0, 0, 0];
+      for (let i = 0; i < 4; i++) syncInvestInputs(i);
+      updateAllocationBar();
+      updateLockButton();
+    });
+
     container.querySelectorAll('.company-card-header').forEach((header) => {
       header.addEventListener('click', () => {
         const idx = header.dataset.index;
@@ -726,6 +747,75 @@
         e.target.value = allocations[idx];
       });
     });
+
+    // Explicit Cash Reserve Entry Card (Allows participants to allocate/see their cash)
+    const stockSum = allocations.reduce((a, b) => a + b, 0);
+    const cashPct = Math.max(0, 100 - stockSum);
+    const baseCap = capital > 0 ? capital : (startingCapital || 10000);
+    const cashAmt = Math.round((baseCap * cashPct) / 100);
+
+    const cashCard = document.createElement('div');
+    cashCard.className = 'company-card cash-reserve-card';
+    cashCard.style.cssText = 'border: 2px solid rgba(245, 166, 35, 0.45); background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.85)); margin-top: 1rem;';
+    cashCard.innerHTML = `
+      <div class="company-card-header" style="cursor: default;">
+        <div class="company-icon" style="background: rgba(245, 166, 35, 0.15); font-size: 1.8rem;">💰</div>
+        <div class="company-info">
+          <div class="company-name" style="color: var(--gold); display: flex; align-items: center; gap: 8px;">
+            <span>Safe Cash Reserve</span>
+            <span style="font-size:0.7rem;background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3);padding:2px 8px;border-radius:12px;font-weight:700;">0% RISK</span>
+          </div>
+          <div class="company-hint" style="color: #94a3b8; font-size: 0.82rem; margin-top: 2px;">
+            Liquid cash retained safely in your fund. Completely immune to market bluff bankruptcies.
+          </div>
+        </div>
+      </div>
+      <div class="company-invest">
+        <input type="range" class="invest-slider" id="cash-reserve-slider" min="0" max="100" value="${cashPct}">
+        <div class="invest-input-wrap">
+          <input type="number" class="invest-pct-input" id="cash-reserve-input" min="0" max="100" value="${cashPct}">
+          <span class="invest-pct-label">%</span>
+        </div>
+        <span class="invest-amount" id="cash-reserve-amount">${formatCurrency(cashAmt)}</span>
+      </div>
+    `;
+    container.appendChild(cashCard);
+
+    const cSlider = cashCard.querySelector('#cash-reserve-slider');
+    const cInput = cashCard.querySelector('#cash-reserve-input');
+    if (cSlider) {
+      cSlider.addEventListener('input', (e) => {
+        if (locked) return;
+        const targetCash = parseInt(e.target.value, 10) || 0;
+        const curStocks = allocations.reduce((a, b) => a + b, 0);
+        const maxStock = 100 - targetCash;
+        if (curStocks > maxStock && curStocks > 0) {
+          const ratio = maxStock / curStocks;
+          for (let i = 0; i < 4; i++) allocations[i] = Math.floor(allocations[i] * ratio);
+          for (let i = 0; i < 4; i++) syncInvestInputs(i);
+        }
+        updateAllocationBar();
+        updateLockButton();
+      });
+    }
+    if (cInput) {
+      cInput.addEventListener('input', (e) => {
+        if (locked) return;
+        let targetCash = parseInt(e.target.value, 10);
+        if (isNaN(targetCash)) targetCash = 0;
+        if (targetCash < 0) targetCash = 0;
+        if (targetCash > 100) targetCash = 100;
+        const curStocks = allocations.reduce((a, b) => a + b, 0);
+        const maxStock = 100 - targetCash;
+        if (curStocks > maxStock && curStocks > 0) {
+          const ratio = maxStock / curStocks;
+          for (let i = 0; i < 4; i++) allocations[i] = Math.floor(allocations[i] * ratio);
+          for (let i = 0; i < 4; i++) syncInvestInputs(i);
+        }
+        updateAllocationBar();
+        updateLockButton();
+      });
+    }
   }
 
   function updatePitchesVisibilityOnCards() {
@@ -760,6 +850,19 @@
     });
   }
 
+  function syncCashCard() {
+    const stockSum = allocations.reduce((s, v) => s + v, 0);
+    const cashPct = Math.max(0, 100 - stockSum);
+    const base = capital > 0 ? capital : (startingCapital || 10000);
+    const cashAmt = Math.round((base * cashPct) / 100);
+    const cSlider = document.getElementById('cash-reserve-slider');
+    const cInput = document.getElementById('cash-reserve-input');
+    const cAmt = document.getElementById('cash-reserve-amount');
+    if (cSlider && document.activeElement !== cSlider) cSlider.value = cashPct;
+    if (cInput && document.activeElement !== cInput) cInput.value = cashPct;
+    if (cAmt) cAmt.textContent = formatCurrency(cashAmt);
+  }
+
   function syncInvestInputs(idx) {
     const slider = document.querySelector('.invest-slider[data-index="' + idx + '"]');
     const input = document.querySelector('.invest-pct-input[data-index="' + idx + '"]');
@@ -775,42 +878,42 @@
         amount.textContent = formatCurrency(stake);
       }
     }
+    syncCashCard();
   }
 
   function updateAllocationBar() {
     const total = allocations.reduce((s, v) => s + v, 0);
     const pct = Math.min(total, 100);
+    const cashPct = Math.max(0, 100 - total);
+    syncCashCard();
+
     const fill = $('#allocation-fill');
     if (fill) {
       fill.style.width = pct + '%';
-      if (total > 0 && total <= 100) {
+      if (total <= 100) {
         fill.classList.add('valid');
         fill.classList.remove('exceeded');
-      } else if (total > 100) {
-        fill.classList.remove('valid');
-        fill.classList.add('exceeded');
       } else {
         fill.classList.remove('valid');
-        fill.classList.remove('exceeded');
+        fill.classList.add('exceeded');
       }
     }
     if ($('#allocation-pct')) $('#allocation-pct').textContent = total;
 
     const hint = $('#allocation-hint');
     if (hint) {
-      if (total === 100) {
-        hint.textContent = '✓ 100% Allocated (0% Cash Reserve)';
-        hint.style.color = 'var(--green)';
-      } else if (total > 100) {
-        hint.textContent = '⚠️ Exceeded 100% by ' + (total - 100) + '% (Reduce to lock in)';
+      if (total > 100) {
+        hint.textContent = '⚠️ Stocks exceed 100% by ' + (total - 100) + '% (Reduce to lock in)';
         hint.style.color = 'var(--red)';
+      } else if (total === 100) {
+        hint.textContent = '✓ 100% Invested in Stocks (0% Cash Reserve)';
+        hint.style.color = 'var(--green)';
       } else if (total > 0) {
-        const cashLeft = 100 - total;
-        hint.textContent = '✓ ' + total + '% Invested (' + cashLeft + '% kept as safe Cash)';
+        hint.textContent = `✓ ${total}% in Stocks | ${cashPct}% Safe Cash Reserve`;
         hint.style.color = 'var(--gold)';
       } else {
-        hint.textContent = '(Allocate percentage or hold 100% Cash)';
-        hint.style.color = '';
+        hint.textContent = '✓ 100% Safe Cash Reserve (₹0 in Stocks)';
+        hint.style.color = 'var(--green)';
       }
     }
   }
@@ -820,25 +923,31 @@
     const btn = $('#btn-lock');
     if (!btn) return;
 
+    if (capital <= 0) {
+      btn.disabled = true;
+      btn.innerHTML = '🚫 Oops! Better luck next time! Wait for tournament to end.';
+      return;
+    }
+
     if (locked) {
       btn.disabled = true;
       btn.innerHTML = '<span class="lock-icon">🔒</span> Portfolio Locked In';
       return;
     }
 
-    if (total <= 0) {
-      btn.disabled = true;
-      btn.innerHTML = '<span class="lock-icon">🔒</span> Allocate % to Lock In';
-    } else if (total > 100) {
+    if (total > 100) {
       btn.disabled = true;
       btn.innerHTML = '<span class="lock-icon">⚠️</span> Exceeds 100% (Reduce by ' + (total - 100) + '%)';
     } else if (total === 100) {
       btn.disabled = false;
-      btn.innerHTML = '<span class="lock-icon">🔒</span> Lock In 100% Portfolio';
-    } else {
+      btn.innerHTML = '<span class="lock-icon">🔒</span> Lock In 100% Stocks';
+    } else if (total > 0) {
       const cashLeft = 100 - total;
       btn.disabled = false;
-      btn.innerHTML = '<span class="lock-icon">🔒</span> Lock In (' + total + '% Invested, ' + cashLeft + '% Cash)';
+      btn.innerHTML = '<span class="lock-icon">🔒</span> Lock In (' + total + '% Stocks, ' + cashLeft + '% Cash)';
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="lock-icon">💼</span> Lock In 100% Safe Cash Reserve';
     }
   }
 
@@ -849,10 +958,6 @@
       return;
     }
     const total = allocations.reduce((s, v) => s + v, 0);
-    if (total <= 0) {
-      toast('Please allocate percentage across companies, or hold cash', 'error');
-      return;
-    }
     if (total > 100) {
       toast('Allocations cannot exceed 100% (currently ' + total + '%)', 'error');
       return;
@@ -1219,6 +1324,12 @@
       if ($('#screen-leaderboard') && $('#screen-leaderboard').classList.contains('active')) {
         renderLeaderboard($('#leaderboard-list'));
       }
+    });
+
+    socket.on('round_ended_buffer', (data) => {
+      if (data && data.round) currentRound = data.round;
+      updateBufferScreen();
+      showScreen('round-buffer');
     });
 
     socket.on('game_over', (data) => {

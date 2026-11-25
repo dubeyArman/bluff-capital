@@ -288,9 +288,7 @@
     }
     .podium-card {
       flex: 1; border-radius: 24px; padding: 2rem 1.5rem; text-align: center;
-      position: relative; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      animation: podiumSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      opacity: 0; transform: translateY(40px);
+      position: relative; transition: all 0.4s ease;
       display: flex; flex-direction: column; justify-content: center; align-items: center;
     }
     @keyframes podiumSlideUp {
@@ -563,14 +561,23 @@
     <!-- VIEW 4: LEADERBOARD -->
     <div id="view-leaderboard">
       <div class="lb-header-box">
-        <h2 class="lb-header-title">🏆 VENTURE CAPITAL STANDINGS</h2>
-        <div class="lb-header-sub">Official Syndicate Rankings • Spot The Bluff, Compound The Capital</div>
+        <h2 class="lb-header-title" id="stage-lb-title">Final Syndicate Standings</h2>
       </div>
       <div class="stage-podium-showcase" id="stage-podium">
         <!-- Rendered by renderLeaderboardView -->
       </div>
       <div class="stage-runners-up" id="stage-runners-up">
         <!-- Ranks 4+ -->
+      </div>
+    </div>
+
+    <!-- VIEW 5: STAGE BUFFER VIEW (BETWEEN ROUNDS) -->
+    <div id="view-buffer" style="display:none;height:100%;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
+      <div style="font-size:4rem;margin-bottom:1rem;">🔔</div>
+      <h2 id="stage-buffer-title" style="font-family:'Poppins',sans-serif;font-size:3.5rem;font-weight:900;color:var(--gold);margin-bottom:1rem;letter-spacing:2px;">ROUND CONCLUDED</h2>
+      <p id="stage-buffer-sub" style="font-size:1.35rem;color:var(--gray);max-width:700px;line-height:1.6;margin-bottom:2rem;">All syndicate portfolios are locked in. The market is now closed. Host will reveal market results and syndicate standings shortly!</p>
+      <div style="font-family:'Poppins',sans-serif;font-size:1.15rem;color:var(--green);background:rgba(34,197,94,0.12);border:1px solid var(--green);padding:0.75rem 2rem;border-radius:30px;letter-spacing:1px;font-weight:700;">
+        STAND BY FOR MARKET REVEAL &amp; STANDINGS
       </div>
     </div>
   </div>
@@ -606,6 +613,8 @@
       $('#view-invest').style.display = 'none';
       $('#view-reveal').style.display = 'none';
       $('#view-leaderboard').style.display = 'none';
+      const bufView = $('#view-buffer');
+      if (bufView) bufView.style.display = 'none';
 
       const v = $('#view-' + viewId);
       if (v) v.style.display = 'flex';
@@ -713,18 +722,36 @@
       return div.innerHTML;
     }
 
-    function renderLeaderboardView(lb) {
+    let lastRenderedLbJson = '';
+    function renderLeaderboardView(lb, isFinal) {
       leaderboard = lb || [];
       const podium = $('#stage-podium');
       const runnersUp = $('#stage-runners-up');
       if (!podium) return;
-      podium.innerHTML = '';
-      if (runnersUp) runnersUp.innerHTML = '';
+
+      const titleEl = $('#stage-lb-title');
+      if (titleEl) {
+        if (isFinal || currentRound >= 4 || gameState === 'game_over') {
+          titleEl.textContent = 'Final Syndicate Standings';
+        } else {
+          titleEl.textContent = `Round ${currentRound || 1} Syndicate Standings`;
+        }
+      }
 
       if (!leaderboard || leaderboard.length === 0) {
         podium.innerHTML = '<div style="color:var(--gray);font-size:1.4rem;padding:3rem;">No syndicate funds recorded yet.</div>';
+        if (runnersUp) runnersUp.innerHTML = '';
         return;
       }
+
+      const currentJson = JSON.stringify(leaderboard.map(t => [t.name, Math.round(t.capital)]));
+      if (currentJson === lastRenderedLbJson && podium.children.length > 0) {
+        return; // Don't re-create cards to prevent repeating rank animations!
+      }
+      lastRenderedLbJson = currentJson;
+
+      podium.innerHTML = '';
+      if (runnersUp) runnersUp.innerHTML = '';
 
       const top3 = leaderboard.slice(0, 3);
       const rest = leaderboard.slice(3, 10);
@@ -945,6 +972,10 @@
         } else if (gameState.endsWith('_invest')) {
           renderInvest(data);
           switchView('invest');
+        } else if (gameState.endsWith('_ended')) {
+          const bufTitle = $('#stage-buffer-title');
+          if (bufTitle) bufTitle.textContent = `ROUND ${currentRound || 1} CONCLUDED`;
+          switchView('buffer');
         } else if (gameState.endsWith('_results')) {
           switchView('reveal');
         } else if (gameState === 'game_over') {
@@ -989,6 +1020,15 @@
       if (wrap) wrap.classList.remove('paused');
     });
 
+    socket.on('round_ended_buffer', (data) => {
+      if (data && data.round) currentRound = data.round;
+      const bufTitle = $('#stage-buffer-title');
+      if (bufTitle) bufTitle.textContent = `ROUND ${data.round || currentRound} CONCLUDED`;
+      if (currentProjectorView !== 'leaderboard') {
+        switchView('buffer');
+      }
+    });
+
     socket.on('results_reveal', (data) => {
       renderReveal(data);
       if (currentProjectorView !== 'leaderboard') {
@@ -999,9 +1039,10 @@
 
     socket.on('show_leaderboard', (data) => {
       currentProjectorView = 'leaderboard';
-      if (data && data.leaderboard) renderLeaderboardView(data.leaderboard);
+      if (data && data.round) currentRound = data.round;
+      if (data && data.leaderboard) renderLeaderboardView(data.leaderboard, data.isFinal || data.round === 4);
       switchView('leaderboard');
-      triggerConfetti();
+      if (data && data.isFinal) triggerConfetti();
     });
 
     socket.on('resume_projector_game', () => {
@@ -1010,6 +1051,8 @@
         switchView('lobby');
       } else if (gameState.endsWith('_invest')) {
         switchView('invest');
+      } else if (gameState.endsWith('_ended')) {
+        switchView('buffer');
       } else if (gameState.endsWith('_results')) {
         switchView('reveal');
       } else if (gameState === 'game_over') {
@@ -1018,7 +1061,7 @@
     });
 
     socket.on('leaderboard_update', (data) => {
-      renderLeaderboardView(data.leaderboard || []);
+      renderLeaderboardView(data.leaderboard || [], currentRound === 4 || gameState === 'game_over');
       if (currentProjectorView === 'leaderboard') {
         switchView('leaderboard');
       }
@@ -1079,6 +1122,10 @@
         } else if (gameState.endsWith('_invest')) {
           renderInvest(data);
           switchView('invest');
+        } else if (gameState.endsWith('_ended')) {
+          const bufTitle = $('#stage-buffer-title');
+          if (bufTitle) bufTitle.textContent = `ROUND ${currentRound || 1} CONCLUDED`;
+          switchView('buffer');
         } else if (gameState.endsWith('_results')) {
           switchView('reveal');
         } else if (gameState === 'game_over') {
