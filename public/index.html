@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BLUFF CAPITAL — Mobile Market</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <!-- Stock Ticker Background -->
+  <div class="ticker-bg" id="ticker-bg"></div>
+
+  <!-- ========== DRAMATIC 5-SECOND ROUND COUNTDOWN OVERLAY ========== -->
+  <div id="countdown-overlay" class="countdown-overlay" style="display:none;">
+    <div class="countdown-content">
+      <div class="countdown-round" id="cd-round-badge">ROUND 1</div>
+      <div class="countdown-theme" id="cd-theme-name">Tech & Energy</div>
+      <div class="countdown-number-wrap">
+        <div class="countdown-number" id="cd-number">5</div>
+      </div>
+      <div class="countdown-hint">Market opening in seconds... Prepare your portfolio!</div>
+    </div>
+  </div>
+
+  <!-- ========== SCREEN 1: REGISTRATION & LOGIN ========== -->
+  <div class="screen active" id="screen-register">
+    <div class="register-container">
+      <div class="logo-container">
+        <div class="logo-glow"></div>
+        <h1 class="logo-title">BLUFF<span class="gold">CAPITAL</span></h1>
+        <p class="tagline">Can you spot the bluff?</p>
+        <div class="logo-line"></div>
+      </div>
+
+      <!-- Auth Tabs: Register vs Login -->
+      <div class="auth-tabs">
+        <button type="button" class="auth-tab active" id="tab-register">Register Team</button>
+        <button type="button" class="auth-tab" id="tab-login">Team Login</button>
+      </div>
+
+      <!-- FORM 1: REGISTER NEW TEAM -->
+      <div class="register-form" id="form-register">
+        <div class="input-group">
+          <input type="text" id="reg-team-name" placeholder="Team Name (e.g. Apex Fund)" maxlength="30" autocomplete="off">
+        </div>
+        <div class="input-group">
+          <input type="text" id="reg-leader-name" placeholder="Team Leader / Student Name" maxlength="30" autocomplete="off">
+        </div>
+        <div class="input-group">
+          <input type="text" id="reg-enrollment" placeholder="Enrollment No (Max 15 characters)" maxlength="15" autocomplete="off" style="text-transform: uppercase;">
+        </div>
+        <div class="input-group">
+          <input type="password" id="reg-password" placeholder="Create Team Password" maxlength="30" autocomplete="off">
+        </div>
+        <button class="btn btn-primary btn-glow" id="btn-register">
+          <span>Enter the Market</span>
+          <svg class="btn-arrow" viewBox="0 0 24 24" width="20" height="20"><path d="M5 12h14m-7-7 7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <!-- FORM 2: LOGIN EXISTING TEAM -->
+      <div class="register-form" id="form-login" style="display:none;">
+        <div class="input-group">
+          <input type="text" id="login-team-name" placeholder="Team Name or Enrollment No" maxlength="30" autocomplete="off">
+        </div>
+        <div class="input-group">
+          <input type="password" id="login-password" placeholder="Team Password" maxlength="30" autocomplete="off">
+        </div>
+        <button class="btn btn-primary btn-glow" id="btn-login">
+          <span>Re-enter Market</span>
+          <svg class="btn-arrow" viewBox="0 0 24 24" width="20" height="20"><path d="M5 12h14m-7-7 7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <div class="teams-count">
+        <span class="pulse-dot"></span>
+        <span id="reg-team-count">0</span> teams in the market
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SCREEN 2: WAITING LOBBY ========== -->
+  <div class="screen" id="screen-lobby">
+    <div class="lobby-container">
+      <div class="lobby-header">
+        <div class="team-meta">
+          <h2 class="lobby-team-name" id="lobby-team-name">Team Name</h2>
+          <div class="lobby-leader" id="lobby-leader">Leader: Alex</div>
+          <div class="lobby-enrollment" id="lobby-enrollment">Enrollment: -</div>
+        </div>
+        <div class="capital-badge">
+          <span class="capital-label">Starting Capital</span>
+          <span class="capital-value" id="lobby-capital">₹10,000</span>
+        </div>
+      </div>
+      <div class="lobby-status">
+        <div class="breathing-ring"></div>
+        <div class="breathing-ring delay-1"></div>
+        <div class="breathing-ring delay-2"></div>
+        <p class="waiting-text" id="lobby-waiting-text">Waiting for the host to start Round 1...</p>
+      </div>
+      <div class="lobby-footer">
+        <div class="teams-count">
+          <span class="pulse-dot"></span>
+          <span id="lobby-team-count">0</span> teams ready
+        </div>
+        <button type="button" class="btn-link" id="btn-logout">Switch Team</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SCREEN 3: INVESTMENT PHASE ========== -->
+  <div class="screen" id="screen-invest">
+    <div class="invest-container">
+      <!-- Header -->
+      <div class="invest-header">
+        <div class="round-badge" id="invest-round-badge">Round 1</div>
+        <div class="round-theme" id="invest-round-theme">Tech & Energy</div>
+        <div class="capital-display">
+          <span class="capital-label">Your Capital</span>
+          <span class="capital-value" id="invest-capital">₹10,000</span>
+        </div>
+      </div>
+
+      <!-- Timer -->
+      <div class="timer-container">
+        <div class="timer-bar-bg">
+          <div class="timer-bar-fill" id="timer-bar-fill"></div>
+        </div>
+        <div class="timer-display" id="timer-display">
+          <span class="timer-icon">⏱</span>
+          <span class="timer-value" id="timer-value">90</span>
+          <span class="timer-unit">s</span>
+        </div>
+      </div>
+
+      <!-- Allocation bar -->
+      <div class="allocation-bar-container">
+        <div class="allocation-bar-bg">
+          <div class="allocation-bar-fill" id="allocation-fill"></div>
+        </div>
+        <div class="allocation-label">
+          <span id="allocation-pct">0</span>% allocated
+          <span class="allocation-hint" id="allocation-hint">(must be exactly 100%)</span>
+        </div>
+      </div>
+
+      <!-- Company cards -->
+      <div class="company-cards" id="company-cards">
+        <!-- Filled by JS -->
+      </div>
+
+      <!-- Lock In -->
+      <button class="btn btn-primary btn-lock" id="btn-lock" disabled>
+        <span class="lock-icon">🔒</span> Lock In Investment
+      </button>
+    </div>
+  </div>
+
+  <!-- ========== SCREEN 4: WAITING FOR RESULTS ========== -->
+  <div class="screen" id="screen-waiting-results">
+    <div class="waiting-results-container">
+      <div class="suspense-animation">
+        <div class="suspense-ring"></div>
+        <div class="suspense-ring delay-1"></div>
+        <div class="suspense-ring delay-2"></div>
+        <div class="suspense-icon">📊</div>
+      </div>
+      <h2 class="waiting-title">Portfolio Locked!</h2>
+      <p class="waiting-subtitle">Host is preparing the market reveal...</p>
+      <div class="investment-summary" id="investment-summary">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SCREEN 5: RESULTS REVEAL ========== -->
+  <div class="screen" id="screen-results">
+    <div class="results-container">
+      <h2 class="results-title" id="results-title">Round 1 Results</h2>
+      <div id="results-cash-banner" style="display:none;" class="cash-held-banner">
+        💼 Zero Investment Strategy: Held 100% Cash (₹0 Risk Taken)
+      </div>
+      <div class="results-cards" id="results-cards">
+        <!-- Filled by JS -->
+      </div>
+      <div class="results-summary">
+        <div class="result-capital-change">
+          <span class="result-label">New Capital</span>
+          <span class="result-capital-value" id="result-new-capital">₹10,000</span>
+        </div>
+        <div class="result-rank" id="result-rank"></div>
+      </div>
+      <div class="results-actions">
+        <button class="btn btn-secondary" id="btn-view-leaderboard">View Leaderboard</button>
+        <button class="btn btn-outline" id="btn-continue" style="display:none;">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SCREEN 6: LEADERBOARD ========== -->
+  <div class="screen" id="screen-leaderboard">
+    <div class="leaderboard-container">
+      <h2 class="leaderboard-title">📊 Live Standings</h2>
+      <div class="leaderboard-list" id="leaderboard-list">
+        <!-- Filled by JS -->
+      </div>
+      <button class="btn btn-outline" id="btn-back-from-lb">Back</button>
+    </div>
+  </div>
+
+  <!-- ========== SCREEN 7: AWAITING FINAL RESULTS ========== -->
+  <div class="screen" id="screen-gameover">
+    <div class="gameover-container">
+      <div class="awaiting-results-card">
+        <div class="awaiting-icon">⏳</div>
+        <h1 class="awaiting-title">Awaiting Final Results</h1>
+        <p class="awaiting-subtitle">
+          All 4 investment rounds have concluded!
+        </p>
+
+        <div class="awaiting-team-card">
+          <div class="awaiting-team-name" id="awaiting-team-name">Syndicate Fund</div>
+          <div class="awaiting-leader-name" id="awaiting-leader-name">Leader: -</div>
+          <div class="awaiting-enrollment" id="awaiting-enrollment">Enrollment: -</div>
+          <div class="awaiting-cap-box">
+            <div class="awaiting-cap-label">Your Final Liquid Capital</div>
+            <div class="awaiting-cap-val" id="awaiting-final-capital">₹10,000</div>
+          </div>
+        </div>
+
+        <div class="awaiting-stage-callout">
+          <div class="callout-icon">👀</div>
+          <div class="callout-text">
+            <strong>Look up at the Stage Screen!</strong><br>
+            The final venture leaderboard, champion podium, and awards are being announced on the main stage projector.
+          </div>
+        </div>
+
+        <div class="gameover-branding" style="margin-top:1.5rem;">
+          <span class="logo-title small">BLUFF<span class="gold">CAPITAL</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

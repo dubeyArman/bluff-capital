@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    { "source": "/api/host/(.*)", "destination": "/api/host/[...slug]" },
+    { "source": "/api/host", "destination": "/api/host/index" },
+    { "source": "/api/(.*)", "destination": "/api/[...slug]" },
+    { "source": "/api", "destination": "/api/index" },
+    { "source": "/host", "destination": "/host.html" },
+    { "source": "/projector", "destination": "/projector.html" }
+  ]
+}

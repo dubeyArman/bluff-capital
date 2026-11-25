@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLUFF CAPITAL — Stage Projector View</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050811;
+      --card: #0f172a;
+      --card-border: #1e293b;
+      --gold: #f5a623;
+      --gold-light: #ffd700;
+      --green: #22c55e;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --white: #f8fafc;
+      --gray: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--white);
+      min-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Stage Bar */
+    .stage-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.25rem 3rem; background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(10px); border-bottom: 2px solid rgba(245, 166, 35, 0.3);
+    }
+    .stage-logo {
+      font-family: 'Poppins', sans-serif; font-size: 2rem; font-weight: 900;
+      letter-spacing: 2px; color: var(--white);
+    }
+    .stage-logo span { color: var(--gold); }
+    .stage-round-pill {
+      font-family: 'Poppins', sans-serif; font-size: 1.2rem; font-weight: 700;
+      color: var(--gold); background: rgba(245, 166, 35, 0.15);
+      border: 1px solid var(--gold); border-radius: 30px; padding: 0.4rem 1.5rem;
+    }
+    .stage-stats {
+      display: flex; gap: 2.5rem; align-items: center; font-size: 1.1rem;
+    }
+    .stage-stat-item strong { color: var(--gold); font-size: 1.3rem; }
+
+    /* Main Stage Container */
+    .stage-container {
+      flex: 1; padding: 2rem 3rem; display: flex; flex-direction: column;
+      justify-content: center; position: relative;
+    }
+
+    /* Screen: Lobby */
+    #view-lobby {
+      display: none; text-align: center; flex-direction: column;
+      align-items: center; justify-content: center; height: 100%;
+    }
+    .lobby-hero-title {
+      font-family: 'Poppins', sans-serif; font-size: 4rem; font-weight: 900;
+      line-height: 1.1; margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #fff 0%, var(--gold) 60%, var(--gold-light) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 50px rgba(245,166,35,0.4);
+    }
+    .lobby-subtitle {
+      font-size: 1.5rem; color: var(--gray); margin-bottom: 2rem; font-weight: 400;
+    }
+    
+    /* Lobby Stage Grid (QR Code + Join Instructions) */
+    .lobby-split-grid {
+      display: flex; align-items: center; justify-content: center;
+      gap: 3.5rem; max-width: 1050px; width: 100%;
+    }
+    .qr-showcase {
+      background: #ffffff; padding: 1.5rem; border-radius: 24px;
+      box-shadow: 0 0 50px rgba(245,166,35,0.3), 0 20px 40px rgba(0,0,0,0.8);
+      display: flex; flex-direction: column; align-items: center;
+      border: 4px solid var(--gold);
+    }
+    .qr-img {
+      width: 260px; height: 260px; display: block; border-radius: 12px;
+    }
+    .qr-caption {
+      margin-top: 0.75rem; font-family: 'Poppins', sans-serif; font-weight: 700;
+      color: #0f172a; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px;
+    }
+
+    .lobby-info-box {
+      background: var(--card); border: 2px solid var(--card-border);
+      border-radius: 24px; padding: 2.25rem 3rem; text-align: left;
+      flex: 1; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+    .lobby-instruction { font-size: 1.25rem; color: var(--white); font-weight: 600; margin-bottom: 0.5rem; }
+    .stage-url-banner {
+      font-family: 'Poppins', sans-serif; font-size: 1.85rem; color: var(--gold);
+      font-weight: 800; background: rgba(245,166,35,0.1); padding: 0.75rem 1.25rem;
+      border-radius: 12px; border: 1px solid rgba(245,166,35,0.3); margin-bottom: 1.5rem;
+      word-break: break-all;
+    }
+    .lobby-teams-counter {
+      font-family: 'Poppins', sans-serif; font-size: 2.5rem; font-weight: 800;
+      color: var(--green); text-shadow: 0 0 25px rgba(34,197,94,0.5); margin-bottom: 1rem;
+    }
+    .lobby-rules-list {
+      list-style: none; font-size: 1rem; color: var(--gray); line-height: 1.8;
+    }
+    .lobby-rules-list li::before {
+      content: "• "; color: var(--gold); font-weight: bold;
+    }
+
+    /* Screen: Investment Phase */
+    #view-invest {
+      display: none; height: 100%; flex-direction: column; justify-content: space-between;
+    }
+    .invest-top {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
+    }
+    .theme-title {
+      font-family: 'Poppins', sans-serif; font-size: 2.5rem; font-weight: 800; color: var(--gold);
+    }
+    .timer-huge {
+      display: flex; align-items: center; gap: 0.75rem;
+      font-family: 'Poppins', sans-serif; font-size: 3.2rem; font-weight: 900;
+      background: var(--card); border: 2px solid var(--card-border);
+      padding: 0.5rem 2rem; border-radius: 20px; color: var(--gold);
+    }
+    .timer-huge.warning {
+      color: var(--red); border-color: var(--red); animation: pulseGlow 0.6s infinite alternate;
+    }
+    .timer-huge.paused {
+      color: #fde047; border-color: #eab308; animation: pulseGlowAmber 1.2s infinite alternate;
+    }
+    @keyframes pulseGlowAmber {
+      from { box-shadow: 0 0 10px rgba(234, 179, 8, 0.3); }
+      to { box-shadow: 0 0 35px rgba(234, 179, 8, 0.8); }
+    }
+    @keyframes pulseGlow {
+      from { box-shadow: 0 0 10px rgba(239,68,68,0.3); }
+      to { box-shadow: 0 0 35px rgba(239,68,68,0.8); }
+    }
+
+    .companies-grid-stage {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; flex: 1;
+    }
+    .p-card {
+      background: var(--card); border: 2px solid var(--card-border);
+      border-radius: 20px; padding: 1.75rem; display: flex; flex-direction: column;
+      justify-content: space-between; position: relative; overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .p-card-header {
+      display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;
+    }
+    .p-icon { font-size: 2.5rem; }
+    .p-name { font-family: 'Poppins', sans-serif; font-size: 1.35rem; font-weight: 700; color: var(--white); }
+    .p-pitch { font-size: 1.05rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 1.25rem; flex: 1; }
+    .p-pitch.pitch-hidden {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(245, 166, 35, 0.08);
+      border: 1px dashed rgba(245, 166, 35, 0.45);
+      border-radius: 12px;
+      padding: 0.85rem 1.1rem;
+      color: #cbd5e1;
+      font-style: italic;
+      font-size: 0.95rem;
+    }
+    .p-hint {
+      background: rgba(245,166,35,0.12); border-left: 4px solid var(--gold);
+      padding: 0.85rem 1rem; border-radius: 8px; font-size: 0.95rem; color: #fef08a;
+      line-height: 1.4;
+    }
+    .p-hint.hint-hidden {
+      background: rgba(148, 163, 184, 0.08);
+      border-left-color: #64748b;
+      color: #94a3b8;
+      font-style: italic;
+    }
+    .p-mic-badge {
+      font-size: 1.4rem;
+      animation: pulseMicProj 1.4s ease-in-out infinite;
+    }
+    @keyframes pulseMicProj {
+      0%, 100% { transform: scale(1); opacity: 0.85; }
+      50% { transform: scale(1.22); opacity: 1; filter: drop-shadow(0 0 8px rgba(245, 166, 35, 0.85)); }
+    }
+    .pitch-revealed {
+      animation: projPitchReveal 0.45s ease-out;
+    }
+    @keyframes projPitchReveal {
+      0% { opacity: 0; transform: translateY(-4px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Submissions Progress Bar */
+    .invest-bottom-bar {
+      margin-top: 1.5rem; display: flex; align-items: center; gap: 2rem;
+    }
+    .progress-track {
+      flex: 1; height: 16px; background: var(--card); border-radius: 8px;
+      overflow: hidden; border: 1px solid var(--card-border);
+    }
+    .progress-fill {
+      height: 100%; width: 0%; background: linear-gradient(90deg, var(--gold), var(--green));
+      transition: width 0.4s ease;
+    }
+    .progress-text { font-family: 'Poppins', sans-serif; font-size: 1.3rem; font-weight: 700; white-space: nowrap; }
+
+    /* Screen: Reveal Phase */
+    #view-reveal {
+      display: none; height: 100%; flex-direction: column; justify-content: center;
+    }
+    .reveal-title {
+      font-family: 'Poppins', sans-serif; font-size: 2.8rem; font-weight: 900;
+      color: var(--gold); text-align: center; margin-bottom: 2rem;
+    }
+    .reveal-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;
+    }
+    .r-card {
+      background: var(--card); border: 2px solid var(--card-border);
+      border-radius: 20px; padding: 2rem 1.5rem; text-align: center;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      min-height: 280px; position: relative; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .r-card.revealed.gain {
+      border-color: var(--green); background: rgba(34,197,94,0.08);
+      box-shadow: 0 0 30px rgba(34,197,94,0.3);
+    }
+    .r-card.revealed.loss {
+      border-color: #f97316; background: rgba(249,115,22,0.08);
+    }
+    .r-card.revealed.bluff {
+      border-color: var(--red); background: rgba(239,68,68,0.15);
+      box-shadow: 0 0 45px rgba(239,68,68,0.6);
+    }
+    .r-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+    .r-name { font-family: 'Poppins', sans-serif; font-size: 1.35rem; font-weight: 700; margin-bottom: 1rem; }
+    .r-return {
+      font-family: 'Poppins', sans-serif; font-size: 2.8rem; font-weight: 900; opacity: 0;
+      transform: scale(0.5); transition: 0.4s ease;
+    }
+    .r-card.revealed .r-return { opacity: 1; transform: scale(1); }
+    .r-return.gain { color: var(--green); }
+    .r-return.loss { color: #f97316; }
+    .r-return.bluff {
+      color: var(--red); font-size: 2.2rem;
+      text-shadow: 0 0 20px rgba(239,68,68,0.8);
+      border: 3px solid var(--red); padding: 0.25rem 0.75rem; border-radius: 8px;
+      transform: rotate(-8deg); animation: stampIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes stampIn {
+      0% { transform: scale(3) rotate(-25deg); opacity: 0; }
+      100% { transform: scale(1) rotate(-8deg); opacity: 1; }
+    }
+
+    /* Screen: Leaderboard */
+    #view-leaderboard {
+      display: none; height: 100%; flex-direction: column;
+    }
+    .lb-header-title {
+      font-family: 'Poppins', sans-serif; font-size: 2.5rem; font-weight: 900;
+      color: var(--gold); text-align: center; margin-bottom: 1.5rem;
+    }
+    .stage-lb-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; flex: 1;
+    }
+    .podium-box {
+      background: var(--card); border: 2px solid var(--gold);
+      border-radius: 20px; padding: 2rem; display: flex; flex-direction: column;
+      justify-content: space-around; box-shadow: 0 0 40px rgba(245,166,35,0.2);
+    }
+    .podium-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 1.5rem; border-radius: 12px; background: rgba(255,255,255,0.03);
+    }
+    .podium-item.p1 { border: 2px solid var(--gold); background: rgba(245,166,35,0.1); }
+    .podium-rank { font-size: 2.5rem; }
+    .podium-name { font-family: 'Poppins', sans-serif; font-size: 1.4rem; font-weight: 700; }
+    .podium-leader { font-size: 0.85rem; color: var(--gray); }
+    .podium-cap { font-family: 'Poppins', sans-serif; font-size: 1.8rem; font-weight: 800; color: var(--green); }
+
+    .stage-table-box {
+      background: var(--card); border: 2px solid var(--card-border);
+      border-radius: 20px; padding: 1.5rem; overflow-y: auto;
+    }
+    .st-table { width: 100%; border-collapse: collapse; }
+    .st-table th {
+      padding: 0.75rem 1rem; font-size: 0.9rem; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--gray); border-bottom: 2px solid var(--card-border);
+      text-align: left;
+    }
+    .st-table td {
+      padding: 0.7rem 1rem; font-size: 1.15rem; border-bottom: 1px solid rgba(51,65,85,0.5);
+    }
+    .st-rank { font-weight: 700; color: var(--gold); width: 60px; font-size: 1.25rem; }
+    .st-name { font-weight: 600; }
+    .st-leader { font-size: 0.8rem; color: var(--gray); }
+    .st-cap { font-family: 'Poppins', sans-serif; font-weight: 800; color: var(--green); }
+
+    /* Canvas Confetti */
+    #stage-confetti {
+      position: absolute; inset: 0; pointer-events: none; z-index: 100;
+    }
+
+    .stage-admin-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 8px;
+      color: var(--white);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      margin-left: 8px;
+    }
+    .stage-admin-link:hover {
+      background: rgba(212, 168, 83, 0.2);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* Stage Countdown Overlay */
+    .stage-countdown-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 8, 17, 0.96);
+      backdrop-filter: blur(25px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    .stage-countdown-content {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 800px;
+      width: 90%;
+    }
+    .stage-countdown-round {
+      display: inline-block;
+      padding: 10px 32px;
+      background: rgba(245, 166, 35, 0.15);
+      border: 2px solid var(--gold);
+      color: var(--gold);
+      border-radius: 40px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 0 30px rgba(245, 166, 35, 0.3);
+    }
+    .stage-countdown-theme {
+      font-family: 'Poppins', sans-serif;
+      font-size: 3rem;
+      font-weight: 900;
+      color: var(--white);
+      margin-bottom: 2rem;
+      letter-spacing: 1px;
+      text-shadow: 0 0 40px rgba(255, 255, 255, 0.3);
+    }
+    .stage-countdown-circle {
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(245, 166, 35, 0.3) 0%, rgba(5, 8, 17, 0.8) 75%);
+      border: 5px solid var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 80px rgba(245, 166, 35, 0.6), inset 0 0 40px rgba(245, 166, 35, 0.3);
+      margin-bottom: 2rem;
+    }
+    .stage-countdown-num {
+      font-family: 'Poppins', sans-serif;
+      font-size: 7.5rem;
+      font-weight: 900;
+      color: var(--gold-light);
+      line-height: 1;
+      display: inline-block;
+      text-shadow: 0 0 50px rgba(245, 166, 35, 0.9);
+      will-change: transform, opacity;
+    }
+    .stage-countdown-num.go {
+      font-size: 4.5rem;
+      color: var(--green);
+      text-shadow: 0 0 60px rgba(34, 197, 94, 0.95);
+    }
+    .stage-countdown-hint {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      color: var(--gray);
+      letter-spacing: 3px;
+      font-weight: 600;
+    }
+    @keyframes stagePulsePop {
+      0% { transform: scale(1.8); opacity: 0; }
+      50% { transform: scale(0.9); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <!-- DRAMATIC 5-SECOND ROUND COUNTDOWN OVERLAY FOR STAGE PROJECTOR -->
+  <div id="stage-countdown-overlay" class="stage-countdown-overlay" style="display:none;">
+    <div class="stage-countdown-content">
+      <div class="stage-countdown-round" id="stage-cd-round">ROUND 1</div>
+      <div class="stage-countdown-theme" id="stage-cd-theme">Tech & Energy</div>
+      <div class="stage-countdown-circle">
+        <div class="stage-countdown-num" id="stage-cd-num">5</div>
+      </div>
+      <div class="stage-countdown-hint">MARKET OPENING IN SECONDS • PREPARE YOUR SYNDICATES</div>
+    </div>
+  </div>
+
+  <canvas id="stage-confetti"></canvas>
+
+  <div class="stage-bar">
+    <div class="stage-logo">BLUFF <span>CAPITAL</span></div>
+    <div class="stage-round-pill" id="stage-round-badge">LOBBY</div>
+    <div class="stage-stats">
+      <div class="stage-stat-item">Teams: <strong id="stage-stat-teams">0</strong></div>
+      <div class="stage-stat-item">Status: <strong id="stage-stat-status" style="color:var(--gold);">Waiting</strong></div>
+      <a href="/host" target="_blank" class="stage-admin-link" title="Open Host / Admin Dashboard">⚙️ Admin</a>
+    </div>
+  </div>
+
+  <div class="stage-container">
+    <!-- VIEW 1: LOBBY WITH DYNAMIC QR CODE -->
+    <div id="view-lobby" style="display:flex;">
+      <h1 class="lobby-hero-title">THE HIGH STAKES VENTURE GAME</h1>
+      <p class="lobby-subtitle">Spot the bluff. Back the winners. Compound your capital.</p>
+
+      <div class="lobby-split-grid">
+        <!-- QR Code Showcase Card -->
+        <div class="qr-showcase">
+          <img id="stage-qr-img" class="qr-img" src="/api/qrcode" alt="Scan to Register">
+          <div class="qr-caption">📱 Scan with Phone to Join</div>
+        </div>
+
+        <!-- Join Instructions Box -->
+        <div class="lobby-info-box">
+          <div class="lobby-instruction">Or enter this URL in your phone's browser:</div>
+          <div class="stage-url-banner" id="stage-server-url">http://localhost:3000</div>
+          <div class="lobby-teams-counter" id="lobby-teams-count">0 TEAMS READY</div>
+          <ul class="lobby-rules-list">
+            <li>Form your Syndicate (~4 Members per Team)</li>
+            <li>Register Team Name, Leader Name & Password</li>
+            <li>Initial Liquid Capital: ₹10,000</li>
+            <li>In each round: Exactly one venture is bluffing!</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: INVESTMENT ROUND -->
+    <div id="view-invest">
+      <div class="invest-top">
+        <div>
+          <div style="font-size:1.1rem;color:var(--gray);text-transform:uppercase;letter-spacing:2px;">ALLOCATION PHASE</div>
+          <div class="theme-title" id="stage-theme-title">Tech & Energy</div>
+        </div>
+        <div class="timer-huge" id="stage-timer-wrap">
+          <span>⏱</span> <span id="stage-timer-val">90</span>s
+        </div>
+      </div>
+
+      <div class="companies-grid-stage" id="stage-companies-grid">
+        <!-- Filled by JS -->
+      </div>
+
+      <div class="invest-bottom-bar">
+        <div class="progress-track">
+          <div class="progress-fill" id="stage-progress-fill"></div>
+        </div>
+        <div class="progress-text" id="stage-progress-text">0 / 0 Portfolios Locked</div>
+      </div>
+    </div>
+
+    <!-- VIEW 3: REVEAL RESULTS -->
+    <div id="view-reveal">
+      <h2 class="reveal-title" id="stage-reveal-title">MARKET REVEAL: WHICH ONE BLUFFED?</h2>
+      <div class="reveal-grid" id="stage-reveal-grid">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+
+    <!-- VIEW 4: LEADERBOARD -->
+    <div id="view-leaderboard">
+      <h2 class="lb-header-title">🏆 TOP VENTURE FUNDS STANDINGS</h2>
+      <div class="stage-lb-grid">
+        <div class="podium-box" id="stage-podium">
+          <!-- Top 3 -->
+        </div>
+        <div class="stage-table-box">
+          <table class="st-table">
+            <thead>
+              <tr><th>#</th><th>Fund Name</th><th>Capital</th></tr>
+            </thead>
+            <tbody id="stage-lb-rows">
+              <!-- Top 4-10 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+  (function() {
+    'use strict';
+
+    const socket = io({ transports: ['websocket'] });
+    let currentRound = 1;
+    let gameState = 'waiting';
+    let leaderboard = [];
+    let pitchVisible = false;
+    let currentCompanies = [];
+    let isStageCountdownActive = false;
+
+    const $ = s => document.querySelector(s);
+
+    // Initialize Join URL and QR Code once from browser origin (Zero flashing, 100% stable)
+    function initServerInfo() {
+      const joinUrl = window.location.origin;
+      const urlBanner = $('#stage-server-url');
+      const qrImg = $('#stage-qr-img');
+      if (urlBanner) urlBanner.textContent = joinUrl;
+      if (qrImg) qrImg.src = '/api/qrcode?url=' + encodeURIComponent(joinUrl);
+    }
+    initServerInfo();
+
+    function switchView(viewId) {
+      $('#view-lobby').style.display = 'none';
+      $('#view-invest').style.display = 'none';
+      $('#view-reveal').style.display = 'none';
+      $('#view-leaderboard').style.display = 'none';
+
+      const v = $('#view-' + viewId);
+      if (v) v.style.display = 'flex';
+    }
+
+    function updateProjectorPitches(visible) {
+      pitchVisible = !!visible;
+      const cards = document.querySelectorAll('#stage-companies-grid .p-card');
+      cards.forEach((card, idx) => {
+        const c = currentCompanies[idx];
+        if (!c) return;
+        const pitchEl = card.querySelector('.p-pitch');
+        const hintEl = card.querySelector('.p-hint');
+        if (pitchEl) {
+          if (pitchVisible) {
+            pitchEl.className = 'p-pitch pitch-revealed';
+            pitchEl.textContent = c.pitch;
+          } else {
+            pitchEl.className = 'p-pitch pitch-hidden';
+            pitchEl.innerHTML = '<span class="p-mic-badge">🎙️</span><span><strong>Live Pitch in progress</strong> — Listen to the speaker</span>';
+          }
+        }
+        if (hintEl && c.hint) {
+          if (pitchVisible) {
+            hintEl.className = 'p-hint pitch-revealed';
+            hintEl.innerHTML = `<strong>Market Signal:</strong> ${c.hint}`;
+          } else {
+            hintEl.className = 'p-hint hint-hidden';
+            hintEl.innerHTML = `<strong>Market Signal:</strong> Locked until host reveals details.`;
+          }
+        }
+      });
+    }
+
+    function renderInvest(data) {
+      $('#stage-theme-title').textContent = data.theme || `Round ${currentRound}`;
+      const grid = $('#stage-companies-grid');
+      grid.innerHTML = '';
+
+      if (data.pitchVisible !== undefined) {
+        pitchVisible = !!data.pitchVisible;
+      }
+      currentCompanies = data.companies || [];
+
+      if (currentCompanies.length > 0) {
+        currentCompanies.forEach(c => {
+          const card = document.createElement('div');
+          card.className = 'p-card';
+          const pitchHtml = pitchVisible
+            ? `<div class="p-pitch pitch-revealed">${c.pitch}</div>`
+            : `<div class="p-pitch pitch-hidden"><span class="p-mic-badge">🎙️</span><span><strong>Live Pitch in progress</strong> — Listen to the speaker</span></div>`;
+          const hintHtml = c.hint
+            ? (pitchVisible
+                ? `<div class="p-hint pitch-revealed"><strong>Market Signal:</strong> ${c.hint}</div>`
+                : `<div class="p-hint hint-hidden"><strong>Market Signal:</strong> Locked until host reveals details.</div>`)
+            : '';
+          card.innerHTML = `
+            <div>
+              <div class="p-card-header">
+                <span class="p-icon">${c.icon || '📊'}</span>
+                <span class="p-name">${c.name}</span>
+              </div>
+              ${pitchHtml}
+            </div>
+            ${hintHtml}
+          `;
+          grid.appendChild(card);
+        });
+      }
+    }
+
+    function renderReveal(data) {
+      $('#stage-reveal-title').textContent = `ROUND ${data.round || currentRound} PERFORMANCE & BLUFF REVEAL`;
+      const grid = $('#stage-reveal-grid');
+      grid.innerHTML = '';
+
+      const companies = data.companies || [];
+      companies.forEach((c, i) => {
+        const isBluff = c.isBluff || c.returnPct === -100;
+        const isGain = !isBluff && c.returnPct >= 0;
+        const card = document.createElement('div');
+        card.className = 'r-card';
+        card.innerHTML = `
+          <div class="r-icon">${c.icon || '📊'}</div>
+          <div class="r-name">${c.name}</div>
+          <div class="r-return ${isBluff ? 'bluff' : (isGain ? 'gain' : 'loss')}">
+            ${isBluff ? 'BANKRUPT (-100%)' : ((isGain ? '+' : '') + c.returnPct + '%')}
+          </div>
+        `;
+        grid.appendChild(card);
+
+        setTimeout(() => {
+          card.classList.add('revealed');
+          if (isBluff) card.classList.add('bluff');
+          else if (isGain) card.classList.add('gain');
+          else card.classList.add('loss');
+        }, 1200 * (i + 1));
+      });
+    }
+
+    function renderLeaderboardView(lb) {
+      leaderboard = lb || [];
+      const podium = $('#stage-podium');
+      const rows = $('#stage-lb-rows');
+      podium.innerHTML = '';
+      rows.innerHTML = '';
+
+      const medals = ['🥇', '🥈', '🥉'];
+      const top3 = leaderboard.slice(0, 3);
+      const rest = leaderboard.slice(3, 10);
+
+      top3.forEach((t, i) => {
+        const div = document.createElement('div');
+        div.className = `podium-item ${i === 0 ? 'p1' : ''}`;
+        div.innerHTML = `
+          <span class="podium-rank">${medals[i]}</span>
+          <div>
+            <div class="podium-name">${t.name}</div>
+            ${t.leaderName ? `<div class="podium-leader">Leader: ${t.leaderName}</div>` : ''}
+          </div>
+          <span class="podium-cap">₹${Math.round(t.capital).toLocaleString('en-IN')}</span>
+        `;
+        podium.appendChild(div);
+      });
+
+      rest.forEach((t, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="st-rank">#${i + 4}</td>
+          <td class="st-name">
+            ${t.name}
+            ${t.leaderName ? `<div class="st-leader">Leader: ${t.leaderName}</div>` : ''}
+          </td>
+          <td class="st-cap">₹${Math.round(t.capital).toLocaleString('en-IN')}</td>
+        `;
+        rows.appendChild(tr);
+      });
+    }
+
+    function triggerConfetti() {
+      const canvas = $('#stage-confetti');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const ctx = canvas.getContext('2d');
+      const pieces = [];
+      const colors = ['#f5a623', '#ffd700', '#22c55e', '#ef4444', '#3b82f6'];
+
+      for (let i = 0; i < 250; i++) {
+        pieces.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height - canvas.height,
+          w: Math.random() * 12 + 6,
+          h: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: (Math.random() - 0.5) * 4,
+          vy: Math.random() * 4 + 2,
+          rot: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 10
+        });
+      }
+
+      let frame = 0;
+      function step() {
+        if (frame > 400) { ctx.clearRect(0,0,canvas.width,canvas.height); return; }
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        pieces.forEach(p => {
+          p.x += p.vx; p.y += p.vy; p.rot += p.rotSpeed;
+          ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot * Math.PI / 180);
+          ctx.fillStyle = p.color; ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+          ctx.restore();
+        });
+        frame++;
+        requestAnimationFrame(step);
+      }
+      step();
+    }
+
+    // ---- Web Audio Synthesizer for Stage Projector ----
+    let stageAudioCtx = null;
+    function getStageAudioCtx() {
+      try {
+        if (!stageAudioCtx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) stageAudioCtx = new AudioContext();
+        }
+        if (stageAudioCtx && stageAudioCtx.state === 'suspended') {
+          stageAudioCtx.resume();
+        }
+        return stageAudioCtx;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function playStageBeep(freq = 520, duration = 0.22) {
+      try {
+        const ctx = getStageAudioCtx();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playStageMarketChime() {
+      try {
+        const ctx = getStageAudioCtx();
+        if (!ctx) return;
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.1);
+          gain.gain.setValueAtTime(0.35, ctx.currentTime + i * 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.5);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + i * 0.1);
+          osc.stop(ctx.currentTime + i * 0.1 + 0.55);
+        });
+      } catch (e) {}
+    }
+
+    // Unlock audio on click anywhere on projector screen
+    window.addEventListener('pointerdown', () => getStageAudioCtx(), { once: true });
+    window.addEventListener('keydown', () => getStageAudioCtx(), { once: true });
+
+    // Socket listeners
+    socket.on('pitch_visibility_change', (data) => {
+      if (data && data.pitchVisible !== undefined) {
+        updateProjectorPitches(data.pitchVisible);
+      }
+    });
+
+    socket.on('round_countdown', (data) => {
+      const overlay = $('#stage-countdown-overlay');
+      const badge = $('#stage-cd-round');
+      const theme = $('#stage-cd-theme');
+      const num = $('#stage-cd-num');
+      if (!overlay || !num) return;
+
+      if (data.seconds > 0) {
+        isStageCountdownActive = true;
+        overlay.style.display = 'flex';
+        if (badge) badge.textContent = `ROUND ${data.round}`;
+        if (theme) theme.textContent = data.theme || '';
+        num.textContent = data.seconds;
+        num.classList.remove('go');
+        num.style.animation = 'none';
+        num.offsetHeight; // reflow to trigger stagePulsePop
+        num.style.animation = 'stagePulsePop 0.5s ease-out';
+        const freqs = { 5: 440, 4: 523, 3: 587, 2: 659, 1: 880 };
+        playStageBeep(freqs[data.seconds] || 500, 0.22);
+      } else {
+        num.textContent = 'GO!';
+        num.classList.add('go');
+        num.style.animation = 'none';
+        num.offsetHeight;
+        num.style.animation = 'stagePulsePop 0.6s ease-out';
+        playStageMarketChime();
+        setTimeout(() => {
+          isStageCountdownActive = false;
+          overlay.style.display = 'none';
+        }, 750);
+      }
+    });
+
+    socket.on('state_change', (data) => {
+      gameState = data.state;
+      if (data.round) currentRound = data.round;
+      if (data.pitchVisible !== undefined) pitchVisible = !!data.pitchVisible;
+
+      // Close countdown overlay only if not actively animating
+      if (!isStageCountdownActive) {
+        const cdOverlay = $('#stage-countdown-overlay');
+        if (cdOverlay) cdOverlay.style.display = 'none';
+      }
+
+      $('#stage-stat-teams').textContent = data.totalTeams || data.teamCount || 0;
+      $('#lobby-teams-count').textContent = `${data.totalTeams || data.teamCount || 0} TEAMS READY`;
+      $('#stage-round-badge').textContent = currentRound ? `ROUND ${currentRound}` : 'LOBBY';
+      $('#stage-stat-status').textContent = gameState.replace(/_/g, ' ').toUpperCase();
+
+      const sub = data.submittedCount || 0;
+      const tot = data.totalTeams || data.teamCount || 0;
+      $('#stage-progress-text').textContent = `${sub} / ${tot} Portfolios Locked In`;
+      const pct = tot > 0 ? (sub / tot) * 100 : 0;
+      $('#stage-progress-fill').style.width = pct + '%';
+
+      if (gameState === 'waiting') {
+        switchView('lobby');
+      } else if (gameState.endsWith('_invest')) {
+        renderInvest(data);
+        switchView('invest');
+      } else if (gameState.endsWith('_results')) {
+        switchView('reveal');
+      } else if (gameState === 'game_over') {
+        switchView('leaderboard');
+        triggerConfetti();
+      }
+    });
+
+    socket.on('timer_tick', (data) => {
+      const val = $('#stage-timer-val');
+      const wrap = $('#stage-timer-wrap');
+      if (data.isPaused) {
+        if (val) val.textContent = 'PAUSED';
+        if (wrap) {
+          wrap.classList.add('paused');
+          wrap.classList.remove('warning');
+        }
+      } else {
+        const s = data.seconds !== undefined ? data.seconds : data.remaining;
+        if (val) val.textContent = s;
+        if (wrap) {
+          wrap.classList.remove('paused');
+          if (s <= 15) wrap.classList.add('warning');
+          else wrap.classList.remove('warning');
+        }
+      }
+    });
+
+    socket.on('timer_paused', (data) => {
+      const val = $('#stage-timer-val');
+      const wrap = $('#stage-timer-wrap');
+      if (val) val.textContent = 'PAUSED';
+      if (wrap) {
+        wrap.classList.add('paused');
+        wrap.classList.remove('warning');
+      }
+    });
+
+    socket.on('timer_resumed', (data) => {
+      const wrap = $('#stage-timer-wrap');
+      if (wrap) wrap.classList.remove('paused');
+    });
+
+    socket.on('results_reveal', (data) => {
+      renderReveal(data);
+      switchView('reveal');
+      setTimeout(() => {
+        if (data.leaderboard) renderLeaderboardView(data.leaderboard);
+        switchView('leaderboard');
+      }, 7000);
+    });
+
+    socket.on('leaderboard_update', (data) => {
+      renderLeaderboardView(data.leaderboard || []);
+    });
+
+    function applyState(data) {
+      if (!data) return;
+      const count = data.totalTeams || data.teamCount || 0;
+      if ($('#stage-stat-teams')) $('#stage-stat-teams').textContent = count;
+      if ($('#lobby-teams-count')) $('#lobby-teams-count').textContent = `${count} TEAMS READY`;
+      if ($('#stage-round-badge')) $('#stage-round-badge').textContent = data.round ? `ROUND ${data.round}` : 'LOBBY';
+      if ($('#stage-stat-status')) $('#stage-stat-status').textContent = (data.state || '').replace(/_/g, ' ').toUpperCase();
+
+      const sub = data.submittedCount || 0;
+      if ($('#stage-progress-text')) $('#stage-progress-text').textContent = `${sub} / ${count} Portfolios Locked In`;
+      const pct = count > 0 ? (sub / count) * 100 : 0;
+      if ($('#stage-progress-fill')) $('#stage-progress-fill').style.width = pct + '%';
+
+      if (data.round) currentRound = data.round;
+      if (data.pitchVisible !== undefined) pitchVisible = !!data.pitchVisible;
+
+      // Timer display in invest phase
+      if (data.state && data.state.endsWith('_invest')) {
+        const val = $('#stage-timer-val');
+        const wrap = $('#stage-timer-wrap');
+        if (data.isPaused) {
+          if (val) val.textContent = 'PAUSED';
+          if (wrap) { wrap.classList.add('paused'); wrap.classList.remove('warning'); }
+        } else if (data.timerRemaining !== null && data.timerRemaining !== undefined) {
+          const s = data.timerRemaining;
+          if (val) val.textContent = s;
+          if (wrap) {
+            wrap.classList.remove('paused');
+            if (s <= 15) wrap.classList.add('warning');
+            else wrap.classList.remove('warning');
+          }
+        }
+      }
+
+      if (data.state !== gameState) {
+        gameState = data.state;
+        if (gameState === 'waiting') {
+          switchView('lobby');
+        } else if (gameState.endsWith('_invest')) {
+          renderInvest(data);
+          switchView('invest');
+        } else if (gameState.endsWith('_results')) {
+          switchView('reveal');
+        } else if (gameState === 'game_over') {
+          switchView('leaderboard');
+          triggerConfetti();
+        }
+      }
+    }
+
+    async function syncState() {
+      try {
+        const res = await fetch('/api/state');
+        if (res.ok) {
+          const data = await res.json();
+          applyState(data);
+        }
+      } catch (e) {}
+
+      if (gameState && (gameState.endsWith('_results') || gameState === 'game_over')) {
+        try {
+          const lbRes = await fetch('/api/leaderboard');
+          if (lbRes.ok) {
+            const lbData = await lbRes.json();
+            if (lbData.leaderboard) renderLeaderboardView(lbData.leaderboard);
+          }
+        } catch (e) {}
+      }
+    }
+
+    // Initial state sync and 2s polling interval
+    syncState();
+    setInterval(syncState, 2000);
+  })();
+  </script>
+</body>
+</html>

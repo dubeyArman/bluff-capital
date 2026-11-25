@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLUFF CAPITAL — Host Control Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070a13;
+      --bg2: #0f172a;
+      --card: #1e293b;
+      --card-border: #334155;
+      --gold: #f5a623;
+      --gold-light: #fbbf24;
+      --green: #22c55e;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --white: #f8fafc;
+      --gray: #94a3b8;
+      --gray-d: #64748b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--white);
+      min-height: 100vh;
+      padding: 1.5rem;
+    }
+
+    /* ---- Auth Screen ---- */
+    #auth-screen {
+      display: flex; align-items: center; justify-content: center; min-height: 85vh;
+      flex-direction: column; gap: 1.25rem; text-align: center;
+    }
+    .auth-box {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: 16px; padding: 2.5rem 2rem; max-width: 400px; width: 100%;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+    .auth-title { font-family: 'Poppins', sans-serif; font-size: 1.75rem; color: var(--gold); margin-bottom: 0.5rem; }
+    .auth-sub { font-size: 0.85rem; color: var(--gray); margin-bottom: 1.5rem; }
+    #password-input {
+      width: 100%; padding: 0.85rem 1rem; font-size: 1rem; border-radius: 8px;
+      border: 2px solid var(--card-border); background: var(--bg2); color: var(--white);
+      text-align: center; outline: none; margin-bottom: 1rem; transition: 0.2s;
+    }
+    #password-input:focus { border-color: var(--gold); }
+    .auth-error { color: var(--red); font-size: 0.85rem; min-height: 1.2em; margin-bottom: 0.5rem; }
+
+    /* ---- Dashboard ---- */
+    #dashboard { display: none; max-width: 1200px; margin: 0 auto; }
+    .dash-topbar {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+      gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--card-border);
+    }
+    .dash-logo {
+      font-family: 'Poppins', sans-serif; font-size: 1.5rem; font-weight: 800;
+      color: var(--white); letter-spacing: 1px;
+    }
+    .dash-logo span { color: var(--gold); }
+    .top-actions { display: flex; align-items: center; gap: 0.75rem; }
+    .state-badge {
+      display: inline-block; padding: 0.4rem 1rem; border-radius: 20px;
+      font-size: 0.85rem; font-weight: 700; text-transform: uppercase;
+      background: rgba(245,166,35,0.15); color: var(--gold); border: 1px solid rgba(245,166,35,0.4);
+    }
+
+    /* Action Buttons */
+    .btn {
+      font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 0.85rem;
+      padding: 0.65rem 1.25rem; border: none; border-radius: 8px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 0.4rem; transition: 0.2s;
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn:active:not(:disabled) { transform: scale(0.97); }
+    .btn-gold { background: var(--gold); color: #000; font-weight: 700; }
+    .btn-gold:hover:not(:disabled) { box-shadow: 0 0 16px rgba(245,166,35,0.5); }
+    .btn-green { background: var(--green); color: #fff; font-weight: 700; }
+    .btn-green:hover:not(:disabled) { box-shadow: 0 0 16px rgba(34,197,94,0.4); }
+    .btn-blue { background: var(--blue); color: #fff; }
+    .btn-outline { background: transparent; border: 1px solid var(--card-border); color: var(--white); }
+    .btn-outline:hover { background: rgba(255,255,255,0.05); }
+    .btn-red { background: var(--red); color: #fff; }
+
+    /* Control Strip & Utilities */
+    .utility-strip {
+      display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem;
+      background: var(--bg2); padding: 0.85rem 1.25rem; border-radius: 12px; border: 1px solid var(--card-border);
+      align-items: center;
+    }
+
+    /* 4-ROUND STAGE & GAME CONTROL MATRIX (Matching uploaded photo) */
+    .matrix-card {
+      background: #080c18;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 25px rgba(0, 0, 0, 0.45);
+    }
+    .matrix-title-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      margin-bottom: 1rem;
+      color: #f5a623;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 800;
+      font-size: 1.05rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .matrix-die-icon {
+      font-size: 1.35rem;
+      filter: drop-shadow(0 0 6px rgba(245, 166, 35, 0.6));
+    }
+    .matrix-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 0.65rem;
+    }
+    .matrix-table th {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #f5a623;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      padding: 0.4rem 0.85rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(245, 166, 35, 0.2);
+    }
+    .matrix-table td {
+      padding: 0.85rem 0.85rem;
+      background: #0d1527;
+      vertical-align: middle;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+    .matrix-table tr td:first-child {
+      border-top-left-radius: 10px;
+      border-bottom-left-radius: 10px;
+      border-left: 1px solid rgba(255, 255, 255, 0.03);
+    }
+    .matrix-table tr td:last-child {
+      border-top-right-radius: 10px;
+      border-bottom-right-radius: 10px;
+      border-right: 1px solid rgba(255, 255, 255, 0.03);
+    }
+    .m-round-title {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 700;
+      font-size: 0.98rem;
+      color: #fff;
+    }
+    .m-round-sub {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+    .m-status-badge {
+      display: inline-block;
+      padding: 0.35rem 0.85rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      background: rgba(148, 163, 184, 0.1);
+      border: 1px solid #334155;
+      color: #94a3b8;
+      text-align: center;
+      min-width: 90px;
+      transition: all 0.25s ease;
+    }
+    .m-status-badge.active {
+      background: rgba(34, 197, 94, 0.15);
+      border-color: #22c55e;
+      color: #22c55e;
+      box-shadow: 0 0 12px rgba(34, 197, 94, 0.35);
+    }
+    .m-status-badge.countdown {
+      background: rgba(245, 166, 35, 0.2);
+      border-color: #f5a623;
+      color: #f5a623;
+      animation: matrixPulse 0.8s infinite alternate;
+    }
+    .m-status-badge.paused {
+      background: rgba(234, 179, 8, 0.2);
+      border-color: #eab308;
+      color: #fde047;
+      animation: matrixPulse 1.2s infinite alternate;
+    }
+    .m-status-badge.ended {
+      background: rgba(51, 65, 85, 0.3);
+      border-color: #475569;
+      color: #64748b;
+    }
+    @keyframes matrixPulse {
+      from { opacity: 0.75; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1.02); }
+    }
+    .m-btn-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .m-btn {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.5rem 0.95rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      outline: none;
+    }
+    .m-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      filter: grayscale(0.5);
+    }
+    .m-btn-start {
+      background: #f5a623;
+      color: #000;
+      box-shadow: 0 0 12px rgba(245, 166, 35, 0.35);
+    }
+    .m-btn-start:hover:not(:disabled) {
+      background: #fbbf24;
+      box-shadow: 0 0 18px rgba(245, 166, 35, 0.6);
+      transform: translateY(-1px);
+    }
+    .m-btn-pause {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #94a3b8;
+    }
+    .m-btn-pause:hover:not(:disabled) {
+      background: #334155;
+      color: #fff;
+    }
+    .m-btn-pause.is-paused {
+      background: rgba(234, 179, 8, 0.25);
+      border-color: #eab308;
+      color: #fde047;
+      box-shadow: 0 0 12px rgba(234, 179, 8, 0.4);
+    }
+    .m-btn-end {
+      background: #451219;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+    }
+    .m-btn-end:hover:not(:disabled) {
+      background: #7f1d1d;
+      color: #fff;
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+    }
+    .m-btn-reveal {
+      background: #131f37;
+      border: 1px solid #1e3a8a;
+      color: #93c5fd;
+    }
+    .m-btn-reveal:hover:not(:disabled) {
+      background: #1e3a8a;
+      color: #fff;
+      box-shadow: 0 0 14px rgba(59, 130, 246, 0.4);
+    }
+    .m-btn-lb {
+      background: #191c28;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+    }
+    .m-btn-lb:hover:not(:disabled) {
+      border-color: #f5a623;
+      color: #f5a623;
+      box-shadow: 0 0 12px rgba(245, 166, 35, 0.3);
+    }
+
+    /* Pitch Control Strip */
+    .pitch-control-strip {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+      border: 1px solid rgba(245, 166, 35, 0.35);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+    .pitch-strip-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.85rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .pitch-strip-title {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .pitch-status-pill {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: rgba(245, 166, 35, 0.15);
+      color: var(--gold);
+      border: 1px solid rgba(245, 166, 35, 0.4);
+    }
+    .pitch-status-pill.visible {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--green);
+      border-color: rgba(34, 197, 94, 0.4);
+    }
+    .pitch-strip-sub {
+      font-size: 0.8rem;
+      color: var(--gray);
+    }
+    .pitch-btn-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.75rem;
+    }
+    .btn-pitch-mode {
+      background: var(--bg2);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      color: var(--white);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-align: left;
+      transition: all 0.2s ease;
+    }
+    .btn-pitch-mode:hover {
+      border-color: var(--gold);
+      background: rgba(245, 166, 35, 0.08);
+      transform: translateY(-1px);
+    }
+    .btn-pitch-mode.active {
+      border-color: var(--gold);
+      background: rgba(245, 166, 35, 0.18);
+      box-shadow: 0 0 15px rgba(245, 166, 35, 0.25);
+    }
+    .btn-pitch-mode.btn-pitch-highlight {
+      background: rgba(34, 197, 94, 0.12);
+      border-color: rgba(34, 197, 94, 0.5);
+    }
+    .btn-pitch-mode.btn-pitch-highlight:hover {
+      background: rgba(34, 197, 94, 0.25);
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+    }
+    .btn-pitch-mode.btn-pitch-highlight.active {
+      border-color: var(--green);
+      background: rgba(34, 197, 94, 0.3);
+      box-shadow: 0 0 25px rgba(34, 197, 94, 0.5);
+    }
+    .btn-pitch-icon {
+      font-size: 1.5rem;
+    }
+    .btn-pitch-text strong {
+      display: block;
+      font-size: 0.9rem;
+      font-family: 'Poppins', sans-serif;
+    }
+    .btn-pitch-text small {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--gray);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem; margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: 12px; padding: 1.25rem; text-align: center;
+    }
+    .stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gray); margin-bottom: 0.25rem; }
+    .stat-val { font-family: 'Poppins', sans-serif; font-size: 1.8rem; font-weight: 800; color: var(--gold); }
+    .stat-sub { font-size: 0.75rem; color: var(--gray-d); margin-top: 0.25rem; }
+
+    /* Layout Sections */
+    .dash-grid {
+      display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.5rem;
+    }
+    @media (max-width: 900px) {
+      .dash-grid { grid-template-columns: 1fr; }
+    }
+
+    .section-card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem;
+    }
+    .section-title {
+      font-family: 'Poppins', sans-serif; font-size: 1.1rem; color: var(--gold);
+      margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between;
+    }
+
+    /* Answer Key Cards */
+    .answer-key-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .ak-item {
+      background: var(--bg2); border: 1px solid var(--card-border);
+      border-radius: 10px; padding: 0.85rem; border-left: 4px solid var(--green);
+    }
+    .ak-item.bluff {
+      border-left-color: var(--red); background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.3);
+    }
+    .ak-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+    .ak-name { font-weight: 700; font-size: 0.95rem; }
+    .ak-badge { font-size: 0.75rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 4px; }
+    .ak-badge.gain { background: rgba(34,197,94,0.2); color: var(--green); }
+    .ak-badge.loss { background: rgba(239,68,68,0.2); color: var(--red); }
+    .ak-desc { font-size: 0.78rem; color: var(--gray); line-height: 1.4; }
+
+    /* Host Speech Hint Box */
+    .speech-box {
+      background: rgba(245,166,35,0.08); border: 1px solid rgba(245,166,35,0.3);
+      border-left: 4px solid var(--gold); border-radius: 8px; padding: 1rem;
+      font-size: 0.9rem; line-height: 1.6; color: #fef08a;
+    }
+    .speech-box strong { color: var(--gold); }
+
+    /* Leaderboard Table */
+    .lb-wrapper { max-height: 480px; overflow-y: auto; }
+    .lb-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .lb-table th {
+      padding: 0.6rem 0.75rem; font-size: 0.75rem; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--gray); border-bottom: 1px solid var(--card-border);
+      position: sticky; top: 0; background: var(--card); z-index: 2;
+    }
+    .lb-table td {
+      padding: 0.5rem 0.75rem; font-size: 0.85rem; border-bottom: 1px solid rgba(51,65,85,0.4);
+    }
+    .lb-table tr:hover td { background: rgba(245,166,35,0.05); }
+    .lb-rank { font-weight: 700; color: var(--gold); width: 45px; }
+    .lb-team { font-weight: 600; }
+    .lb-cap { font-family: 'Poppins', sans-serif; font-weight: 700; color: var(--green); }
+    .lb-status { text-align: center; width: 60px; }
+
+    /* Toast */
+    #host-toast {
+      position: fixed; top: 1.5rem; right: 1.5rem; z-index: 10000;
+      display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none;
+    }
+    .h-toast {
+      pointer-events: auto; background: var(--card); border-left: 4px solid var(--gold);
+      padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6); animation: toastSlide 0.3s ease;
+    }
+    .h-toast.error { border-left-color: var(--red); }
+    .h-toast.success { border-left-color: var(--green); }
+    @keyframes toastSlide { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  </style>
+</head>
+<body>
+  <div id="host-toast"></div>
+
+  <!-- Auth Screen -->
+  <div id="auth-screen">
+    <div class="auth-box">
+      <h1 class="auth-title">🔐 HOST CONTROL</h1>
+      <p class="auth-sub">Bluff Capital 300-Participant Event Director</p>
+      <input type="password" id="password-input" placeholder="Enter Host Password" autocomplete="current-password" autofocus>
+      <div class="auth-error" id="auth-error"></div>
+      <button class="btn btn-gold" style="width: 100%; justify-content: center;" id="btn-auth">Unlock Console</button>
+      <div style="margin-top: 1.25rem;">
+        <a href="/" style="color: var(--gray); font-size: 0.82rem; text-decoration: none; transition: 0.2s;" onmouseover="this.style.color='#f5a623'" onmouseout="this.style.color='#94a3b8'">&larr; Return to Player App</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard">
+    <header class="dash-topbar">
+      <div class="dash-logo">BLUFF <span>CAPITAL</span> &nbsp;•&nbsp; <small style="font-size:0.8rem;color:var(--gray);font-weight:400;">Host Management Suite</small></div>
+      <div class="top-actions">
+        <div class="state-badge" id="game-state-badge">WAITING</div>
+        <a href="/" target="_blank" class="btn btn-outline">📱 Player App</a>
+        <a href="/projector" target="_blank" class="btn btn-outline">📽️ Open Projector View</a>
+        <button class="btn btn-outline" id="btn-export-csv">📥 Export CSV</button>
+      </div>
+    </header>
+
+    <!-- 4-ROUND STAGE & GAME CONTROL MATRIX -->
+    <div class="matrix-card">
+      <div class="matrix-title-bar">
+        <span class="matrix-die-icon">⚂</span>
+        <span>4-ROUND STAGE &amp; GAME CONTROL MATRIX</span>
+      </div>
+      <table class="matrix-table">
+        <thead>
+          <tr>
+            <th style="width: 22%;">ROUND</th>
+            <th style="width: 14%;">STATUS</th>
+            <th style="width: 36%;">ROUND CONTROLS (START WITH 5S COUNTDOWN / PAUSE / END)</th>
+            <th style="width: 28%;">POST-ROUND (STOCKS &amp; LEADERBOARD)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Round 1 -->
+          <tr>
+            <td>
+              <div class="m-round-title">Round 1</div>
+              <div class="m-round-sub">Mobility &amp; Electronics</div>
+            </td>
+            <td>
+              <span class="m-status-badge" id="status-r1">PENDING</span>
+            </td>
+            <td>
+              <div class="m-btn-group">
+                <button type="button" class="m-btn m-btn-start" id="btn-start-r1" onclick="matrixAction(1, 'start')">▶ START</button>
+                <button type="button" class="m-btn m-btn-pause" id="btn-pause-r1" onclick="matrixAction(1, 'pause')">⏸ PAUSE</button>
+                <button type="button" class="m-btn m-btn-end" id="btn-end-r1" onclick="matrixAction(1, 'end')">⏹ END</button>
+              </div>
+            </td>
+            <td>
+              <div class="m-btn-group">
+                <button type="button" class="m-btn m-btn-reveal" id="btn-reveal-r1" onclick="matrixAction(1, 'reveal')">📊 REVEAL STOCKS</button>
+                <button type="button" class="m-btn m-btn-lb" id="btn-lb-r1" onclick="matrixAction(1, 'leaderboard')">🏆 LEADERBOARD</button>
+              </div>
+            </td>
+          </tr>
+          <!-- Round 2 -->
+          <tr>
+            <td>
+              <div class="m-round-title">Round 2</div>
+              <div class="m-round-sub">Finance &amp; Insurance</div>
+            </td>
+            <td>
+              <span class="m-status-badge" id="status-r2">PENDING</span>
+            </td>
+            <td>
+              <div class="m-btn-group">
+                <button type="button" class="m-btn m-btn-start" id="btn-start-r2" onclick="matrixAction(2, 'start')">▶ START</button>
+                <button type="button" class="m-btn m-btn-pause" id="btn-pause-r2" onclick="matrixAction(2, 'pause')">⏸ PAUSE</button>
+                <button type="button" class="m-btn m-btn-end" id="btn-end-r2" onclick="matrixAction(2, 'end')">⏹ END</button>
+              </div>
+            </td>
+            <td>
+              <div class="m-btn-group">
+                <button type="button" class="m-btn m-btn-reveal" id="btn-reveal-r2" onclick="matrixAction(2, 'reveal')">📊 REVEAL STOCKS</button>
+                <button type="button" class="m-btn m-btn-lb" id="btn-lb-r2" onclick="matrixAction(2, 'leaderboard')">🏆 LEADERBOARD</button>
+              </div>
+            </td>
+          </tr>
+          <!-- Round 3 -->
+          <tr>
+            <td>
+              <div class="m-round-title">Round 3</div>
+              <div class="m-round-sub">Health &amp; Consumer</div>
+            </td>
+            <td>
+              <span class="m-status-badge" id="status-r3">PENDING</span>
+            </td>
+            <td>
+              <div class="m-btn-group">
+                <button type="button" class="m-btn m-btn-start" id="btn-start-r3" onclick="matrixAction(3, 'start')">▶ START</button>
+                <button type="button" class="m-btn m-btn-pause" id="btn-pause-r3" onclick="matrixAction(3, 'pause')">⏸ PAUSE</button>
+                <button type="button" class="m-btn m-btn-end" id="btn-end-r3" onclick="matrixAction(3, 'end')">⏹ END</button>
+              </div>
+            </td>
+            <td>
+              <div class="m-btn-group">
+                <button type="button" class="m-btn m-btn-reveal" id="btn-reveal-r3" onclick="matrixAction(3, 'reveal')">📊 REVEAL STOCKS</button>
+                <button type="button" class="m-btn m-btn-lb" id="btn-lb-r3" onclick="matrixAction(3, 'leaderboard')">🏆 LEADERBOARD</button>
+              </div>
+            </td>
+          </tr>
+          <!-- Round 4 -->
+          <tr>
+            <td>
+              <div class="m-round-title">Round 4</div>
+              <div class="m-round-sub">Resources &amp; Space</div>
+            </td>
+            <td>
+              <span class="m-status-badge" id="status-r4">PENDING</span>
+            </td>
+            <td>
+              <div class="m-btn-group">
+                <button type="button" class="m-btn m-btn-start" id="btn-start-r4" onclick="matrixAction(4, 'start')">▶ START</button>
+                <button type="button" class="m-btn m-btn-pause" id="btn-pause-r4" onclick="matrixAction(4, 'pause')">⏸ PAUSE</button>
+                <button type="button" class="m-btn m-btn-end" id="btn-end-r4" onclick="matrixAction(4, 'end')">⏹ END</button>
+              </div>
+            </td>
+            <td>
+              <div class="m-btn-group">
+                <button type="button" class="m-btn m-btn-reveal" id="btn-reveal-r4" onclick="matrixAction(4, 'reveal')">📊 REVEAL STOCKS</button>
+                <button type="button" class="m-btn m-btn-lb" id="btn-lb-r4" onclick="matrixAction(4, 'leaderboard')">🏆 LEADERBOARD</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Secondary Utilities & Quick Actions Strip -->
+    <div class="utility-strip">
+      <button class="btn btn-blue" id="btn-sim-teams">🤖 Add 25 Test Teams</button>
+      <button class="btn btn-outline" id="btn-sim-invest">⚡ Auto-Invest Drafts</button>
+      <button class="btn btn-outline" id="btn-next" style="display:none;">▶ Start Next Round / Advance</button>
+      <button class="btn btn-outline" id="btn-reveal" style="display:none;">📊 Reveal Round Results</button>
+      <button class="btn btn-red" style="margin-left:auto;" id="btn-reset">🔄 Reset Entire Game</button>
+    </div>
+
+    <!-- Live Pitch & Hint Presentation Controls Strip -->
+    <div class="pitch-control-strip">
+      <div class="pitch-strip-header">
+        <div class="pitch-strip-title">
+          <span>🎙️ Live Stage Pitch & Hint Visibility</span>
+          <span class="pitch-status-pill" id="pitch-status-badge">🟡 Hidden (Live Presentation Mode)</span>
+        </div>
+        <div class="pitch-strip-sub">Control when participants and projector can read venture pitches & market signals</div>
+      </div>
+      <div class="pitch-btn-group">
+        <button type="button" class="btn-pitch-mode" id="btn-pitch-auto" title="Pitches & hints reveal automatically when round countdown begins">
+          <span class="btn-pitch-icon">🚀</span>
+          <span class="btn-pitch-text">
+            <strong>1. Show from Start</strong>
+            <small>Auto with countdown</small>
+          </span>
+        </button>
+        <button type="button" class="btn-pitch-mode active" id="btn-pitch-hide" title="Keep pitches & hints hidden so players listen to the live speaker">
+          <span class="btn-pitch-icon">🤫</span>
+          <span class="btn-pitch-text">
+            <strong>2. Don't Show Now</strong>
+            <small>Mask on phones & stage</small>
+          </span>
+        </button>
+        <button type="button" class="btn-pitch-mode btn-pitch-highlight" id="btn-pitch-show" title="Reveal pitches & hints immediately on click!">
+          <span class="btn-pitch-icon">📢</span>
+          <span class="btn-pitch-text">
+            <strong>3. Show Pitches Now</strong>
+            <small>Instant live reveal</small>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Event Statistics -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Active Teams</div>
+        <div class="stat-val" id="stat-teams">0</div>
+        <div class="stat-sub">~300 participants</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Current Round</div>
+        <div class="stat-val" id="stat-round">-</div>
+        <div class="stat-sub" id="stat-theme">Tech & Energy</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Portfolios Submitted</div>
+        <div class="stat-val" id="stat-submitted">0 / 0</div>
+        <div class="stat-sub" id="stat-sub-pct">0% submitted</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Timer Countdown</div>
+        <div class="stat-val" id="stat-timer">-</div>
+        <div class="stat-sub">90s per allocation round</div>
+      </div>
+    </div>
+
+    <!-- Grid Layout -->
+    <div class="dash-grid">
+      <!-- Left Column: Round Intelligence & Verbal Hints -->
+      <div class="left-col">
+        <!-- Official Round Pitch & Answer Key -->
+        <div class="section-card">
+          <div class="section-title">
+            <span>🔑 Host Private Answer Key</span>
+            <small style="color:var(--red);font-size:0.75rem;">(DO NOT PROJECT)</small>
+          </div>
+          <div class="answer-key-grid" id="answer-key">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Speech Card: What Host Reads Aloud -->
+        <div class="section-card">
+          <div class="section-title">
+            <span>🎙️ Facilitator Script & Bluff Cue</span>
+            <small style="color:var(--gold);font-size:0.75rem;">(Read if players struggle)</small>
+          </div>
+          <div class="speech-box" id="hint-box">
+            No active round. Press "Start Next Round" to launch Round 1.
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Live Standings & Submissions -->
+      <div class="right-col">
+        <div class="section-card">
+          <div class="section-title">
+            <span>🏆 Live Leaderboard</span>
+            <span id="lb-team-total" style="font-size:0.8rem;color:var(--gray)">0 teams</span>
+          </div>
+          <div class="lb-wrapper">
+            <table class="lb-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Team Fund</th>
+                  <th>Capital</th>
+                  <th>Locked</th>
+                </tr>
+              </thead>
+              <tbody id="lb-body">
+                <tr><td colspan="4" style="text-align:center;color:var(--gray);padding:2rem;">No teams registered yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+  (function() {
+    'use strict';
+
+    let hostToken = sessionStorage.getItem('bluff_host_token') || '';
+    let authenticated = false;
+    let gameState = 'waiting';
+    let currentRound = 0;
+    let currentPitchMode = 'manual';
+    let currentPitchVisible = false;
+
+    const roundData = {
+      1: {
+        theme: 'Mobility & Electronics',
+        companies: [
+          { name: 'NovaCell Solid-State', returnPct: -100, bluff: true, desc: "Has a working lab prototype of a solid-state EV battery. Says it will supply 3 carmakers by next year at half today's battery price.", why: "Lab prototype to mass supply at half price in one year skips the hard part. Pilot programs are not supply deals." },
+          { name: 'VoltRide Mobility', returnPct: 12, bluff: false, desc: "Rents electric scooters in 3 cities. Lost money last year, but cost per ride fell 22% and repeat riders are rising.", why: "Losses look scary, but unit costs are improving and the policy trend backs it." },
+          { name: 'ChipLink Packaging', returnPct: 15, bluff: false, desc: "Provides advanced packaging for AI chips. One large customer gives 70% of its orders. Factory expansion is already funded.", why: "Customer concentration is a risk, but the funded expansion and demand are real." },
+          { name: 'TerraBattery Recycling', returnPct: -5, bluff: false, desc: "Recovers metals from used EV batteries. Claims 95% recovery, verified by an independent lab after a 6-month pilot plant run.", why: "Claim is verified, but demand is still early. Real company, slow start." }
+        ],
+        bluffHint: "Ask: 'What has to happen between a lab prototype and supplying three carmakers at half the price in 12 months?'"
+      },
+      2: {
+        theme: 'Finance & Insurance',
+        companies: [
+          { name: 'LedgerLoop Payroll', returnPct: 13, bluff: false, desc: "Payroll software for small businesses. Loses about 3% of customers each month but adds about 9%. Monthly subscription model.", why: "Churn sounds bad, but new customers clearly outpace it." },
+          { name: 'Harbor Trade Finance', returnPct: 6, bluff: false, desc: "Lends to exporters against unpaid invoices, funded by a bank credit line. Defaults are about 2% of loans.", why: "Delays raise demand for this lending, and 2% defaults are manageable." },
+          { name: 'Meridian Wealth Advisors', returnPct: -100, bluff: true, desc: "AI investing adviser showing 18% yearly returns for 3 years, with a Big-4 audit of its system. Charges a 1% fee.", why: "The audit covers the software, not the returns. The 18% is from a back-tested model, not real client money." },
+          { name: 'CoverNow Insurance', returnPct: -8, bluff: false, desc: "Flood insurance priced using satellite data. Sold to 20,000 homes. One bad monsoon could cause large claims.", why: "Real company, but the risk it warned about actually happened this period." }
+        ],
+        bluffHint: "Ask: 'Were those 18% returns earned by real client accounts, or are they from a model tested on past data?'"
+      },
+      3: {
+        theme: 'Health & Consumer',
+        companies: [
+          { name: 'DermaGlow Skincare', returnPct: 9, bluff: false, desc: "Sells skincare online. Spends 60% of revenue on influencer ads, but 55% of buyers reorder within 3 months.", why: "High ad spend is offset by strong repeat buying." },
+          { name: 'PulseBand Wearables', returnPct: -100, bluff: true, desc: "Smartwatch that reads blood sugar without needles. Says a 5,000-user trial is complete and preorders are open.", why: "Trial was run by its own team and no regulator has cleared the sugar-reading claim. Preorders are not approval." },
+          { name: 'CareBridge Telehealth', returnPct: 14, bluff: false, desc: "Video consults for long-term patients, paid by insurers. Insurers pay slowly, so cash arrives late, but contracts are signed.", why: "Slow payment is a cash flow issue, not a fake business." },
+          { name: 'FreshRoute Cold Chain', returnPct: 5, bluff: false, desc: "Refrigerated trucks for vaccines and fruit. Owns 200 trucks bought with loans, so debt is high, but trucks run 85% full.", why: "High debt, but full trucks and government support keep it afloat." }
+        ],
+        bluffHint: "Ask: 'Who ran the trial, and which regulator has approved the blood sugar reading?'"
+      },
+      4: {
+        theme: 'Resources & Space',
+        companies: [
+          { name: 'HelioWater Desal', returnPct: 11, bluff: false, desc: "Solar-powered desalination for coastal towns. Two plants running under 15-year government contracts. Growth is slow.", why: "Slow, but long contracts mean steady income." },
+          { name: 'AgriSense Drones', returnPct: -6, bluff: false, desc: "Crop-monitoring drones, paid per acre by farmers. Income is seasonal, with weak months after harvest.", why: "Seasonal dips hurt this period, but the business is real." },
+          { name: 'CopperRoots Mining', returnPct: 17, bluff: false, desc: "Explores for copper. Has a survey report and a land lease, no revenue until drilling pays off in about 3 years. Needs funding.", why: "Looks like a bluff (no revenue, asks for money), but the survey report and lease make it real." },
+          { name: 'OrbitLink Satellites', returnPct: -100, bluff: true, desc: "Has launched 12 satellites and says it will give global internet next year. Claims $50M revenue from preorders.", why: "Global coverage needs hundreds of satellites, and preorders are not revenue." }
+        ],
+        bluffHint: "Ask: 'How many satellites does global coverage need, and is a preorder the same as revenue?'"
+      }
+    };
+
+    const $ = s => document.querySelector(s);
+    const socket = io({ transports: ['websocket'] });
+
+    function toast(msg, type) {
+      const c = $('#host-toast');
+      const el = document.createElement('div');
+      el.className = 'h-toast ' + (type || '');
+      el.textContent = msg;
+      c.appendChild(el);
+      setTimeout(() => el.remove(), 3200);
+    }
+
+    async function tryAuth(savedPw) {
+      const pw = savedPw || $('#password-input').value.trim();
+      if (!pw) {
+        $('#auth-error').textContent = 'Please enter password.';
+        return;
+      }
+      try {
+        const res = await fetch('/api/host/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pw }),
+        });
+        const rawText = await res.text();
+        let data;
+        try {
+          data = JSON.parse(rawText);
+        } catch (jsonErr) {
+          throw new Error('Connection error (HTTP ' + res.status + '). Please retry.');
+        }
+        if (!res.ok) throw new Error(data.error || 'Invalid host credentials');
+
+        authenticated = true;
+        hostToken = pw;
+        sessionStorage.setItem('bluff_host_token', pw);
+        $('#auth-screen').style.display = 'none';
+        $('#dashboard').style.display = 'block';
+        refreshState();
+      } catch (e) {
+        if (!savedPw) {
+          $('#auth-error').textContent = e.message || 'Invalid host credentials.';
+        }
+      }
+    }
+
+    $('#btn-auth').addEventListener('click', () => tryAuth());
+    $('#password-input').addEventListener('keydown', e => { if (e.key === 'Enter') tryAuth(); });
+
+    // Auto-restore session if previously unlocked in this browser tab
+    if (hostToken) {
+      tryAuth(hostToken);
+    }
+
+    async function hostApi(method, path, body) {
+      const opts = { method, headers: { 'Content-Type': 'application/json' } };
+      const reqBody = Object.assign({}, body || {}, { password: hostToken });
+      opts.body = JSON.stringify(reqBody);
+      try {
+        const res = await fetch('/api/host' + path, opts);
+        const rawText = await res.text();
+        let data;
+        try {
+          data = JSON.parse(rawText);
+        } catch (jsonErr) {
+          throw new Error('Server returned non-JSON (HTTP ' + res.status + ')');
+        }
+        if (!res.ok) throw new Error(data.error || 'Failed');
+        return data;
+      } catch (e) {
+        toast(e.message, 'error');
+        throw e;
+      }
+    }
+
+    async function refreshState() {
+      try {
+        const res = await fetch('/api/state');
+        const data = await res.json();
+        gameState = data.state;
+        currentRound = data.round || 0;
+        updateUI(data);
+      } catch (e) {}
+
+      try {
+        const res = await fetch('/api/leaderboard');
+        const data = await res.json();
+        updateLeaderboard(data.leaderboard || []);
+      } catch (e) {}
+    }
+
+    window.matrixAction = async function(round, action) {
+      try {
+        if (action === 'start') {
+          const res = await hostApi('POST', '/round/start', { round });
+          toast(res.message, 'info');
+        } else if (action === 'pause') {
+          const res = await hostApi('POST', '/round/pause', { round });
+          toast(res.message, 'info');
+        } else if (action === 'resume') {
+          const res = await hostApi('POST', '/round/resume', { round });
+          toast(res.message, 'success');
+        } else if (action === 'end') {
+          if (!confirm(`End Round ${round} now and lock all investments?`)) return;
+          const res = await hostApi('POST', '/round/end', { round });
+          toast(res.message, 'info');
+        } else if (action === 'reveal') {
+          const res = await hostApi('POST', '/round/reveal', { round });
+          toast(res.message, 'success');
+        } else if (action === 'leaderboard') {
+          const res = await hostApi('POST', '/round/leaderboard', { round });
+          toast(`Leaderboard updated for Round ${round}!`, 'success');
+        }
+        refreshState();
+      } catch (e) {
+        toast(e.message || 'Action failed', 'error');
+      }
+    };
+
+    function updateUI(data) {
+      $('#game-state-badge').textContent = gameState.replace(/_/g, ' ');
+      $('#stat-teams').textContent = data.totalTeams || data.teamCount || 0;
+      $('#stat-round').textContent = currentRound ? `Round ${currentRound}` : 'Lobby';
+      $('#stat-theme').textContent = data.theme || (roundData[currentRound] ? roundData[currentRound].theme : 'Pre-game');
+      
+      const submitted = data.submittedCount || 0;
+      const total = data.totalTeams || data.teamCount || 0;
+      $('#stat-submitted').textContent = `${submitted} / ${total}`;
+      const pct = total > 0 ? Math.round((submitted / total) * 100) : 0;
+      $('#stat-sub-pct').textContent = `${pct}% of funds locked in`;
+
+      if (hostCountingDown) {
+        const btnNext = $('#btn-next');
+        if (btnNext) {
+          btnNext.disabled = true;
+          btnNext.textContent = `⏳ Round ${hostCountdownRound} starting in ${hostCountdownSeconds}s...`;
+        }
+        $('#stat-timer').textContent = `${hostCountdownSeconds}s`;
+      } else {
+        $('#stat-timer').textContent = data.isPaused ? '⏸ PAUSED' : (data.seconds !== null && data.seconds !== undefined ? `${data.seconds}s` : (data.timer ? `${data.timer}s` : '-'));
+      }
+
+      // Update 4-ROUND STAGE & GAME CONTROL MATRIX
+      const statuses = data.roundStatuses || {};
+      const isPaused = !!data.isPaused;
+      for (let r = 1; r <= 4; r++) {
+        let status = statuses[r] || 'pending';
+        if (currentRound === r && gameState.endsWith('_invest') && isPaused) {
+          status = 'paused';
+        }
+
+        const badge = $(`#status-r${r}`);
+        const btnStart = $(`#btn-start-r${r}`);
+        const btnPause = $(`#btn-pause-r${r}`);
+        const btnEnd = $(`#btn-end-r${r}`);
+        const btnReveal = $(`#btn-reveal-r${r}`);
+        const btnLb = $(`#btn-lb-r${r}`);
+
+        if (badge) {
+          badge.className = `m-status-badge ${status}`;
+          badge.textContent = status.toUpperCase();
+        }
+
+        if (btnPause) {
+          if (status === 'paused') {
+            btnPause.innerHTML = '▶ RESUME';
+            btnPause.className = 'm-btn m-btn-pause is-paused';
+            btnPause.setAttribute('onclick', `matrixAction(${r}, 'resume')`);
+            btnPause.disabled = false;
+          } else if (status === 'active') {
+            btnPause.innerHTML = '⏸ PAUSE';
+            btnPause.className = 'm-btn m-btn-pause';
+            btnPause.setAttribute('onclick', `matrixAction(${r}, 'pause')`);
+            btnPause.disabled = false;
+          } else {
+            btnPause.innerHTML = '⏸ PAUSE';
+            btnPause.className = 'm-btn m-btn-pause';
+            btnPause.setAttribute('onclick', `matrixAction(${r}, 'pause')`);
+            btnPause.disabled = true;
+          }
+        }
+
+        if (btnEnd) {
+          btnEnd.disabled = (status !== 'active' && status !== 'paused' && status !== 'countdown');
+        }
+
+        if (btnStart) {
+          if (status === 'countdown') {
+            btnStart.disabled = true;
+            btnStart.innerHTML = '⏳ READY';
+          } else if (status === 'active' || status === 'paused') {
+            btnStart.disabled = true;
+            btnStart.innerHTML = '▶ ACTIVE';
+          } else if (status === 'ended') {
+            btnStart.disabled = false;
+            btnStart.innerHTML = '🔄 RESTART';
+          } else {
+            btnStart.disabled = false;
+            btnStart.innerHTML = '▶ START';
+          }
+        }
+
+        if (btnReveal) {
+          btnReveal.disabled = (status !== 'ended' && !(currentRound === r && gameState.endsWith('_invest')));
+        }
+      }
+
+      if (data.pitchMode !== undefined) currentPitchMode = data.pitchMode;
+      if (data.pitchVisible !== undefined) currentPitchVisible = data.pitchVisible;
+      updatePitchButtonsUI();
+
+      // Render Host Private Key
+      const rd = roundData[currentRound];
+      const akContainer = $('#answer-key');
+      akContainer.innerHTML = '';
+
+      if (rd) {
+        rd.companies.forEach(c => {
+          const item = document.createElement('div');
+          item.className = 'ak-item' + (c.bluff ? ' bluff' : '');
+          item.innerHTML = `
+            <div class="ak-header">
+              <span class="ak-name">${c.name}</span>
+              <span class="ak-badge ${c.bluff || c.returnPct < 0 ? 'loss' : 'gain'}">
+                ${c.bluff ? 'BLUFF (-100%)' : (c.returnPct >= 0 ? '+' : '') + c.returnPct + '%'}
+              </span>
+            </div>
+            <div class="ak-desc"><strong>Pitch:</strong> ${escapeHtml(c.desc)}</div>
+            ${c.why ? `<div class="ak-desc" style="color:#fef08a;margin-top:6px;font-size:0.75rem;"><strong>Analysis (Why):</strong> ${escapeHtml(c.why)}</div>` : ''}
+          `;
+          akContainer.appendChild(item);
+        });
+
+        $('#hint-box').innerHTML = `
+          <strong>Round ${currentRound} Bluff Signal (Read aloud if audience struggles):</strong><br>
+          ${rd.bluffHint}
+        `;
+      } else {
+        akContainer.innerHTML = '<div style="color:var(--gray);font-size:0.85rem;padding:0.5rem;">No active round. Start round when teams have joined.</div>';
+        $('#hint-box').textContent = 'Waiting for Round to be started.';
+      }
+    }
+
+    function updateLeaderboard(lb) {
+      const tbody = $('#lb-body');
+      tbody.innerHTML = '';
+      $('#lb-team-total').textContent = `${lb.length} teams`;
+
+      if (lb.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray);padding:2rem;">No teams registered yet.</td></tr>';
+        return;
+      }
+
+      lb.forEach((entry, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="lb-rank">${entry.rank || i + 1}</td>
+          <td class="lb-team">
+            ${escapeHtml(entry.name)}
+            <div style="font-size:0.75rem;color:var(--gray);">${escapeHtml(entry.leaderName || '')} ${entry.enrollmentNo ? '• Enr: ' + escapeHtml(entry.enrollmentNo) : ''}</div>
+          </td>
+          <td class="lb-cap">₹${Math.round(entry.capital).toLocaleString('en-IN')}</td>
+          <td class="lb-status">${entry.submitted ? '✅' : '⏳'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function escapeHtml(s) {
+      if (!s) return '';
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    let hostCountingDown = false;
+    let hostCountdownRound = 1;
+    let hostCountdownSeconds = 5;
+
+    // Host Action Handlers
+    $('#btn-next').addEventListener('click', async () => {
+      if (hostCountingDown) return; // Prevent double-clicks during countdown!
+      try {
+        const data = await hostApi('POST', '/next');
+        if (data && data.state === 'countdown') {
+          hostCountingDown = true;
+          hostCountdownRound = data.round || 1;
+          hostCountdownSeconds = data.seconds || 5;
+          const btnNext = $('#btn-next');
+          if (btnNext) {
+            btnNext.disabled = true;
+            btnNext.textContent = `⏳ Round ${hostCountdownRound} starting in ${hostCountdownSeconds}s...`;
+          }
+          $('#stat-timer').textContent = `${hostCountdownSeconds}s`;
+          toast(`Round ${hostCountdownRound} countdown initiated (5s)...`, 'info');
+        } else {
+          toast(`Phase advanced to: ${data.state}`, 'success');
+          refreshState();
+        }
+      } catch (e) {}
+    });
+
+    $('#btn-reveal').addEventListener('click', async () => {
+      try {
+        const data = await hostApi('POST', '/reveal');
+        toast(data.message, 'success');
+        refreshState();
+      } catch (e) {}
+    });
+
+    $('#btn-sim-teams').addEventListener('click', async () => {
+      try {
+        const data = await hostApi('POST', '/simulate', { count: 25 });
+        toast(`Added ${data.added} simulated teams! (Total: ${data.totalTeams})`, 'success');
+        refreshState();
+      } catch (e) {}
+    });
+
+    $('#btn-sim-invest').addEventListener('click', async () => {
+      try {
+        const data = await hostApi('POST', '/simulate-investments');
+        toast(`Auto-filled ${data.count} team portfolios!`, 'success');
+        refreshState();
+      } catch (e) {}
+    });
+
+    $('#btn-export-csv').addEventListener('click', () => {
+      window.location.href = '/api/host/export-csv';
+    });
+
+    $('#btn-reset').addEventListener('click', async () => {
+      if (!confirm('⚠️ Are you sure you want to RESET the entire event? All team scores and progress will be erased!')) return;
+      try {
+        await hostApi('POST', '/reset');
+        toast('Event game completely reset.', 'success');
+        refreshState();
+      } catch (e) {}
+    });
+
+    // Pitch Presentation Visibility Controls (⚡ Instant Optimistic Feedback)
+    async function setPitchAction(action) {
+      if (action === 'auto') {
+        currentPitchMode = 'auto';
+      } else if (action === 'hide') {
+        currentPitchMode = 'manual';
+        currentPitchVisible = false;
+      } else if (action === 'show') {
+        currentPitchVisible = true;
+      }
+      updatePitchButtonsUI();
+
+      try {
+        const res = await hostApi('POST', '/pitch-control', { action });
+        currentPitchMode = res.pitchMode;
+        currentPitchVisible = res.pitchVisible;
+        updatePitchButtonsUI();
+        toast(res.message, 'success');
+      } catch (e) {
+        updatePitchButtonsUI();
+      }
+    }
+
+    function updatePitchButtonsUI() {
+      const badge = $('#pitch-status-badge');
+      const btnAuto = $('#btn-pitch-auto');
+      const btnHide = $('#btn-pitch-hide');
+      const btnShow = $('#btn-pitch-show');
+
+      if (btnAuto) btnAuto.classList.toggle('active', currentPitchMode === 'auto');
+      if (btnHide) btnHide.classList.toggle('active', currentPitchMode === 'manual' && !currentPitchVisible);
+      if (btnShow) btnShow.classList.toggle('active', currentPitchVisible);
+
+      if (badge) {
+        if (currentPitchVisible) {
+          badge.className = 'pitch-status-pill visible';
+          badge.textContent = '🟢 Visible to Players & Stage';
+        } else {
+          badge.className = 'pitch-status-pill';
+          badge.textContent = currentPitchMode === 'auto' ? '⏳ Auto-Reveal on Countdown' : '🟡 Hidden (Live Pitch Mode)';
+        }
+      }
+    }
+
+    $('#btn-pitch-auto').addEventListener('click', () => setPitchAction('auto'));
+    $('#btn-pitch-hide').addEventListener('click', () => setPitchAction('hide'));
+    $('#btn-pitch-show').addEventListener('click', () => setPitchAction('show'));
+
+    // Real-time Socket sync
+    socket.on('pitch_visibility_change', (data) => {
+      if (data.pitchMode !== undefined) currentPitchMode = data.pitchMode;
+      if (data.pitchVisible !== undefined) currentPitchVisible = data.pitchVisible;
+      updatePitchButtonsUI();
+    });
+    socket.on('round_countdown', (data) => {
+      const btnNext = $('#btn-next');
+      if (data.seconds > 0) {
+        hostCountingDown = true;
+        hostCountdownRound = data.round || currentRound;
+        hostCountdownSeconds = data.seconds;
+        if (btnNext) {
+          btnNext.disabled = true;
+          btnNext.textContent = `⏳ Round ${hostCountdownRound} starting in ${data.seconds}s...`;
+        }
+        $('#stat-timer').textContent = `${data.seconds}s`;
+      } else {
+        hostCountingDown = false;
+        if (btnNext) {
+          btnNext.disabled = true;
+          btnNext.textContent = '🚀 Launching Round...';
+        }
+        $('#stat-timer').textContent = 'GO!';
+      }
+    });
+
+    socket.on('state_change', (data) => {
+      gameState = data.state;
+      if (data.round) currentRound = data.round;
+      hostCountingDown = false;
+      const btnNext = $('#btn-next');
+      if (btnNext) {
+        btnNext.disabled = false;
+        if (gameState.endsWith('_invest')) {
+          btnNext.textContent = '📊 End & Reveal Results';
+        } else if (gameState.endsWith('_results')) {
+          btnNext.textContent = '▶ Start Next Round';
+        } else if (gameState === 'waiting') {
+          btnNext.textContent = '▶ Start Round 1';
+        } else if (gameState === 'game_over') {
+          btnNext.textContent = '🏁 Game Completed';
+          btnNext.disabled = true;
+        }
+      }
+      refreshState();
+    });
+
+    socket.on('timer_tick', (data) => {
+      if (data.isPaused) {
+        $('#stat-timer').textContent = '⏸ PAUSED';
+      } else {
+        const s = data.seconds !== undefined ? data.seconds : data.remaining;
+        $('#stat-timer').textContent = `${s}s`;
+      }
+    });
+
+    socket.on('timer_paused', (data) => {
+      $('#stat-timer').textContent = '⏸ PAUSED';
+      refreshState();
+    });
+
+    socket.on('timer_resumed', (data) => {
+      refreshState();
+    });
+
+    socket.on('leaderboard_update', (data) => {
+      updateLeaderboard(data.leaderboard || []);
+    });
+
+    socket.on('results_reveal', () => refreshState());
+
+    setInterval(refreshState, 2000);
+  })();
+  </script>
+</body>
+</html>

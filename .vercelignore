@@ -1,0 +1,5 @@
+node.exe
+node_modules
+*.bat
+README_SETUP.txt
+.git

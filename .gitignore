@@ -1,0 +1,6 @@
+node_modules/
+node.exe
+.vercel/
+.env*
+data/
+*.log
