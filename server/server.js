@@ -72,7 +72,7 @@ app.use(async (req, res, next) => {
 });
 
 const HOST_PASSWORD = 'bluffcapital2026';
-const STARTING_CAPITAL = 10000;
+let STARTING_CAPITAL = 10000;
 const TIMER_SECONDS = 90;
 const PORT = process.env.PORT || 3000;
 
@@ -521,8 +521,8 @@ function getLeaderboard() {
       let change = 0;
       if (t.history.length > 0) {
         const last = t.history[t.history.length - 1];
-        if (last.capitalBefore > 0) {
-          change = Math.round(((last.capitalAfter - last.capitalBefore) / last.capitalBefore) * 100);
+        if (last.capitalBefore !== 0) {
+          change = Math.round(((last.capitalAfter - last.capitalBefore) / Math.abs(last.capitalBefore)) * 100);
         }
       }
       return {
@@ -532,6 +532,7 @@ function getLeaderboard() {
         leaderName: t.leaderName || '',
         enrollmentNo: t.enrollmentNo || '',
         capital: Math.round(t.capital * 100) / 100,
+        isDebt: t.capital < 0,
         submitted: isSubmitted,
         change,
         rank: 0,
@@ -598,6 +599,7 @@ function broadcastState() {
     timerRemaining: isInvestPhase() ? timerRemaining : null,
     seconds: isInvestPhase() ? timerRemaining : null,
     total: TIMER_SECONDS,
+    startingCapital: STARTING_CAPITAL,
     teamCount: teams.size,
     totalTeams: teams.size,
     submittedCount: getSubmittedCount(),
@@ -711,6 +713,11 @@ function calculateResults(roundNum) {
     let newCapital = 0;
     let heldCash = false;
 
+    // Base principle capital for investment:
+    // If capitalBefore is positive, they invest from their active capital.
+    // If capitalBefore <= 0 (in debt), their allocations are based on the principle starting capital as margin debt!
+    const baseCapital = capitalBefore > 0 ? capitalBefore : STARTING_CAPITAL;
+
     // Check if team submitted allocations or held cash
     if (!rawAllocations || !Array.isArray(rawAllocations)) {
       // TEAM PLAYED WITH ZERO INVESTMENT (HELD 100% CASH)
@@ -745,6 +752,7 @@ function calculateResults(roundNum) {
         enrollmentNo: team.enrollmentNo || '',
         capitalBefore,
         capitalAfter: newCapital,
+        isDebt: newCapital < 0,
         heldCash: true,
         allocations: [0, 0, 0, 0],
         companyResults,
@@ -752,21 +760,20 @@ function calculateResults(roundNum) {
       teamResults.push(tRes);
       teamResultsMap[team.id] = tRes;
     } else {
-      // TEAM SUBMITTED INVESTMENT ALLOCATIONS (Can include partial cash reserve)
+      // TEAM SUBMITTED INVESTMENT ALLOCATIONS
       const allocations = rawAllocations;
       const totalInvestedPct = allocations.reduce((a, b) => a + b, 0);
       const cashPct = Math.max(0, 100 - totalInvestedPct);
-      const cashPreserved = (cashPct / 100) * capitalBefore;
-      newCapital = cashPreserved; // start with preserved cash
 
+      let totalGained = 0;
       const companyResults = roundData.companies.map((company, i) => {
         const pctAllocated = allocations[i] || 0;
-        const amountInvested = (pctAllocated / 100) * capitalBefore;
-        // If company is bluff, return is -100%, investment goes to 0
+        const amountInvested = (pctAllocated / 100) * baseCapital;
+        // If company is bluff, return is -100%, investment goes to 0 (loss of entire amount invested)
         const returnMultiplier = company.isBluff ? 0 : (1 + company.returnPct / 100);
         const amountAfter = amountInvested * returnMultiplier;
         const gained = amountAfter - amountInvested;
-        newCapital += amountAfter;
+        totalGained += gained;
 
         return {
           name: company.name,
@@ -780,7 +787,8 @@ function calculateResults(roundNum) {
         };
       });
 
-      newCapital = Math.round(newCapital * 100) / 100;
+      // Capital accumulates across all rounds (can go negative into debt)
+      newCapital = Math.round((capitalBefore + totalGained) * 100) / 100;
       team.capital = newCapital;
 
       team.history.push({
@@ -800,6 +808,7 @@ function calculateResults(roundNum) {
         enrollmentNo: team.enrollmentNo || '',
         capitalBefore,
         capitalAfter: newCapital,
+        isDebt: newCapital < 0,
         heldCash: false,
         cashReservePct: cashPct,
         allocations,
@@ -1078,6 +1087,7 @@ app.get(['/api/state', '/state'], (req, res) => {
     timerRemaining: isInvestPhase() ? timerRemaining : null,
     seconds: isInvestPhase() ? timerRemaining : null,
     total: TIMER_SECONDS,
+    startingCapital: STARTING_CAPITAL,
     teamCount: teams.size,
     totalTeams: teams.size,
     submittedCount: getSubmittedCount(),
@@ -1496,17 +1506,51 @@ app.post(['/api/host/round/leaderboard', '/host/round/leaderboard', '/round/lead
   loadStateFromDisk();
   const reqRound = parseInt(req.body.round, 10);
   const roundNum = reqRound || currentRoundIndex() || 1;
+  const lb = getLeaderboard();
   if (roundNum === 4) {
     gameState = 'game_over';
-    io.emit('game_over', { leaderboard: getLeaderboard() });
+    io.emit('game_over', { leaderboard: lb });
   }
+  // Dedicated event specifically for stage projector display (prevents phone flickering)
+  io.emit('show_leaderboard', { round: roundNum, leaderboard: lb });
   broadcastLeaderboard();
   broadcastState();
   saveStateToRemote();
   return res.json({
     success: true,
     round: roundNum,
-    leaderboard: getLeaderboard()
+    leaderboard: lb
+  });
+});
+
+// Host: Set Principle Starting Capital (Before round or tournament)
+app.post(['/api/host/set-starting-capital', '/host/set-starting-capital'], async (req, res) => {
+  if (!verifyHost(req, res)) return;
+  loadStateFromDisk();
+  const { amount } = req.body;
+  const num = parseInt(amount, 10);
+  if (!num || num <= 0 || isNaN(num)) {
+    return res.status(400).json({ error: 'Starting capital must be a positive number.' });
+  }
+
+  STARTING_CAPITAL = num;
+
+  // Update all registered teams' starting capital
+  for (const team of teams.values()) {
+    team.capital = STARTING_CAPITAL;
+    team.investments = {};
+    team.history = [];
+    team.lockedIn = false;
+  }
+
+  saveStateToRemote();
+  broadcastState();
+  broadcastLeaderboard();
+
+  return res.json({
+    success: true,
+    startingCapital: STARTING_CAPITAL,
+    message: `Principle Starting Capital set to ₹${STARTING_CAPITAL.toLocaleString('en-IN')} for all ${teams.size} teams!`
   });
 });
 
@@ -1686,6 +1730,7 @@ io.on('connection', (socket) => {
     timerRemaining,
     seconds: timerRemaining,
     total: TIMER_SECONDS,
+    startingCapital: STARTING_CAPITAL,
     teamCount: teams.size,
     totalTeams: teams.size,
     submittedCount: getSubmittedCount(),

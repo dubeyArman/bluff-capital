@@ -12,6 +12,7 @@
   let leaderName = sessionStorage.getItem('bluff_leaderName') || '';
   let enrollmentNo = sessionStorage.getItem('bluff_enrollmentNo') || '';
   let capital = parseFloat(sessionStorage.getItem('bluff_capital')) || 10000;
+  let startingCapital = 10000;
   let currentRound = 1;
   let gameState = 'waiting';
   let allocations = [0, 0, 0, 0];
@@ -336,7 +337,10 @@
       }
     } else if (gameState && gameState.endsWith('_results')) {
       lastInvestRoundRendered = null;
-      showScreen('results');
+      const active = document.querySelector('.screen.active');
+      if (!active || active.id !== 'screen-results') {
+        showScreen('results');
+      }
     } else if (gameState === 'game_over') {
       lastInvestRoundRendered = null;
       showGameOver();
@@ -394,26 +398,6 @@
 
     // Lock Investment
     $('#btn-lock').addEventListener('click', lockInvestment);
-
-    // Leaderboard Nav
-    $('#btn-view-leaderboard').addEventListener('click', () => {
-      if (currentRound >= 4 || (gameState && gameState.startsWith('round_4')) || gameState === 'game_over') {
-        showGameOver();
-      } else {
-        previousScreen = 'results';
-        showScreen('leaderboard');
-        renderLeaderboard($('#leaderboard-list'));
-      }
-    });
-
-    $('#btn-back-from-lb').addEventListener('click', () => {
-      if (previousScreen === 'results') showScreen('results');
-      else navigateByState();
-    });
-
-    $('#btn-continue').addEventListener('click', () => {
-      fetchState().then(() => navigateByState());
-    });
   }
 
   // ---- Registration ----
@@ -538,7 +522,14 @@
 
     if ($('#invest-round-badge')) $('#invest-round-badge').textContent = 'Round ' + roundNum;
     if ($('#invest-round-theme')) $('#invest-round-theme').textContent = roundThemes[roundNum] || '';
-    if ($('#invest-capital')) $('#invest-capital').textContent = formatCurrency(capital);
+    if ($('#invest-capital')) {
+      if (capital < 0) {
+        $('#invest-capital').innerHTML = `<span style="color:var(--red);">${formatCurrency(capital)}</span> <span style="font-size:0.75rem;background:rgba(239,68,68,0.25);color:var(--red);padding:2px 8px;border-radius:6px;border:1px solid var(--red);font-weight:700;">DEBT</span>`;
+      } else {
+        $('#invest-capital').textContent = formatCurrency(capital);
+        $('#invest-capital').style.color = '';
+      }
+    }
 
     // Render cards and controls synchronously immediately (ZERO lag / no blank screen)
     renderCompanyCards();
@@ -738,7 +729,15 @@
     const amount = document.querySelector('.invest-amount[data-index="' + idx + '"]');
     if (slider) slider.value = allocations[idx];
     if (input) input.value = allocations[idx];
-    if (amount) amount.textContent = formatCurrency(Math.round((capital * allocations[idx]) / 100));
+    const base = capital > 0 ? capital : (startingCapital || 10000);
+    const stake = Math.round((base * allocations[idx]) / 100);
+    if (amount) {
+      if (capital <= 0) {
+        amount.innerHTML = `${formatCurrency(stake)} <small style="color:var(--red);font-size:0.75rem;">(Debt Margin)</small>`;
+      } else {
+        amount.textContent = formatCurrency(stake);
+      }
+    }
   }
 
   function updateAllocationBar() {
@@ -845,21 +844,22 @@
 
     const total = allocations.reduce((s, v) => s + v, 0);
     const cashPct = 100 - total;
+    const base = capital > 0 ? capital : (startingCapital || 10000);
 
     companies.forEach((company, i) => {
       const row = document.createElement('div');
       row.className = 'invest-summary-row';
-      const amt = Math.round((capital * allocations[i]) / 100);
+      const amt = Math.round((base * allocations[i]) / 100);
       const icon = company.icon || defaultIcons[company.name] || '📊';
       row.innerHTML = `
         <span class="invest-summary-name">${icon} ${escapeHtml(company.name)}</span>
-        <span class="invest-summary-value">${allocations[i]}% (${formatCurrency(amt)})</span>
+        <span class="invest-summary-value">${allocations[i]}% (${formatCurrency(amt)}${capital <= 0 ? ' Margin' : ''})</span>
       `;
       container.appendChild(row);
     });
 
     if (cashPct > 0) {
-      const cashAmt = Math.round((capital * cashPct) / 100);
+      const cashAmt = Math.round((base * cashPct) / 100);
       const cashRow = document.createElement('div');
       cashRow.className = 'invest-summary-row';
       cashRow.style.borderTop = '1px dashed rgba(255,255,255,0.15)';
@@ -888,7 +888,6 @@
     const companyResults = myResult ? myResult.companyResults : null;
     const oldCap = myResult ? myResult.capitalBefore : capital;
     const newCap = myResult ? myResult.capitalAfter : capital;
-    const rank = myResult ? myResult.rank : null;
 
     $('#results-title').textContent = 'Round ' + (data.round || currentRound) + ' Market Results';
 
@@ -899,7 +898,7 @@
         banner.textContent = '💼 Zero Investment Strategy: Held 100% Cash (₹0 Risk Taken)';
       } else if (myResult && myResult.cashReservePct > 0) {
         banner.style.display = 'block';
-        const preservedAmt = Math.round((myResult.cashReservePct / 100) * oldCap);
+        const preservedAmt = Math.round((myResult.cashReservePct / 100) * (oldCap > 0 ? oldCap : (startingCapital || 10000)));
         banner.textContent = `💰 Safe Cash Reserve: Kept ${myResult.cashReservePct}% in cash (${formatCurrency(preservedAmt)} preserved intact)`;
       } else {
         banner.style.display = 'none';
@@ -910,12 +909,13 @@
     container.innerHTML = '';
 
     const listToRender = companyResults || data.companies || [];
+    const baseCapForCalc = oldCap > 0 ? oldCap : (startingCapital || 10000);
 
     listToRender.forEach((cRes, i) => {
       const isBluff = cRes.isBluff || cRes.returnPct === -100;
       const isGain = !isBluff && cRes.returnPct >= 0;
       const allocPct = cRes.allocated !== undefined ? cRes.allocated : (allocations[i] || 0);
-      const investedAmt = cRes.amountInvested !== undefined ? cRes.amountInvested : Math.round((oldCap * allocPct) / 100);
+      const investedAmt = cRes.amountInvested !== undefined ? cRes.amountInvested : Math.round((baseCapForCalc * allocPct) / 100);
       const gained = cRes.gained !== undefined ? cRes.gained : (isBluff ? -investedAmt : Math.round((investedAmt * cRes.returnPct) / 100));
       const icon = cRes.icon || defaultIcons[cRes.name] || '📊';
 
@@ -946,7 +946,9 @@
 
     const capEl = $('#result-new-capital');
     animateCounter(capEl, oldCap, newCap, 1400);
-    if (newCap > oldCap) {
+    if (newCap < 0) {
+      capEl.style.color = 'var(--red)';
+    } else if (newCap > oldCap) {
       capEl.style.color = 'var(--green)';
     } else if (newCap < oldCap) {
       capEl.style.color = 'var(--red)';
@@ -957,54 +959,23 @@
     capital = newCap;
     saveSession();
 
-    if (rank) {
-      $('#result-rank').innerHTML = `📊 Current Standing: <strong>Rank #${rank}</strong>`;
-    }
-
-    const btnContinue = $('#btn-continue');
-    const btnViewLb = $('#btn-view-leaderboard');
     const isFinalRound = (data.round && data.round >= 4) || currentRound >= 4 || gameState === 'game_over';
 
     if (isFinalRound) {
-      if (btnContinue) btnContinue.style.display = 'none';
-      if (btnViewLb) btnViewLb.textContent = '⏳ Awaiting Final Results';
+      if ($('#results-next-status')) {
+        $('#results-next-status').textContent = 'Tournament Concluded! Check the Stage Screen for Final Standings & Podium.';
+      }
+      setTimeout(() => {
+        showGameOver();
+      }, 4000);
     } else {
-      if (btnContinue) btnContinue.style.display = 'inline-flex';
-      if (btnViewLb) btnViewLb.textContent = 'View Leaderboard';
+      const nextR = (data.round || currentRound) + 1;
+      if ($('#results-next-status')) {
+        $('#results-next-status').textContent = `Round ${data.round || currentRound} Concluded! Waiting for Host to start Round ${nextR}...`;
+      }
     }
 
     showScreen('results');
-  }
-
-  // ---- Leaderboard ----
-  function renderLeaderboard(container) {
-    container.innerHTML = '';
-    const medals = ['🥇', '🥈', '🥉'];
-
-    if (!leaderboard || leaderboard.length === 0) {
-      container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray-400)">Leaderboard is being updated...</div>';
-      return;
-    }
-
-    leaderboard.forEach((entry, i) => {
-      const isMe = entry.teamId === teamId || entry.id === teamId;
-      const isTop3 = i < 3;
-      const row = document.createElement('div');
-      row.className = 'lb-row' + (isMe ? ' me' : '') + (isTop3 ? ' top-3' : '');
-
-      const pctChange = entry.change !== undefined && entry.change !== 0 ? entry.change : null;
-
-      row.innerHTML = `
-        <div class="lb-rank">${isTop3 ? '<span class="lb-medal">' + medals[i] + '</span>' : (i + 1)}</div>
-        <div class="lb-name">
-          ${escapeHtml(entry.name)}${isMe ? ' <span class="badge-you">(You)</span>' : ''}
-          ${entry.leaderName ? '<div class="lb-leader">Leader: ' + escapeHtml(entry.leaderName) + '</div>' : ''}
-        </div>
-        <div class="lb-capital">${formatCurrency(entry.capital)}</div>
-        ${pctChange !== null ? '<div class="lb-change ' + (pctChange >= 0 ? 'positive' : 'negative') + '">' + (pctChange >= 0 ? '+' : '') + pctChange + '%</div>' : '<div class="lb-change neutral">—</div>'}
-      `;
-      container.appendChild(row);
-    });
   }
 
   // ---- Awaiting Final Results (Replaces phone leaderboard for final round) ----
@@ -1012,7 +983,13 @@
     if ($('#awaiting-team-name')) $('#awaiting-team-name').textContent = teamName || 'Your Syndicate';
     if ($('#awaiting-leader-name')) $('#awaiting-leader-name').textContent = leaderName ? 'Leader: ' + leaderName : '';
     if ($('#awaiting-enrollment')) $('#awaiting-enrollment').textContent = enrollmentNo ? 'Enrollment: ' + enrollmentNo : '';
-    if ($('#awaiting-final-capital')) $('#awaiting-final-capital').textContent = formatCurrency(capital);
+    if ($('#awaiting-final-capital')) {
+      if (capital < 0) {
+        $('#awaiting-final-capital').innerHTML = `<span style="color:var(--red);">${formatCurrency(capital)}</span> <span style="font-size:0.85rem;color:var(--red);background:rgba(239,68,68,0.2);padding:2px 8px;border-radius:6px;border:1px solid var(--red);font-weight:700;">DEBT</span>`;
+      } else {
+        $('#awaiting-final-capital').textContent = formatCurrency(capital);
+      }
+    }
 
     showScreen('gameover');
   }
@@ -1118,7 +1095,14 @@
           teamName = team.name;
           leaderName = team.leaderName || '';
           saveSession();
-          if ($('#invest-capital')) $('#invest-capital').textContent = formatCurrency(capital);
+          if ($('#invest-capital')) {
+      if (capital < 0) {
+        $('#invest-capital').innerHTML = `<span style="color:var(--red);">${formatCurrency(capital)}</span> <span style="font-size:0.75rem;background:rgba(239,68,68,0.25);color:var(--red);padding:2px 8px;border-radius:6px;border:1px solid var(--red);font-weight:700;">DEBT</span>`;
+      } else {
+        $('#invest-capital').textContent = formatCurrency(capital);
+        $('#invest-capital').style.color = '';
+      }
+    }
           if ($('#lobby-capital')) $('#lobby-capital').textContent = formatCurrency(capital);
         }
       }).catch(() => {});
@@ -1210,7 +1194,11 @@
 
   // ---- Utility Helpers ----
   function formatCurrency(amount) {
-    return '₹' + Math.round(amount).toLocaleString('en-IN');
+    const val = Math.round(amount);
+    if (val < 0) {
+      return '-₹' + Math.abs(val).toLocaleString('en-IN');
+    }
+    return '₹' + val.toLocaleString('en-IN');
   }
 
   function escapeHtml(str) {

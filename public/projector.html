@@ -265,47 +265,104 @@
 
     /* Screen: Leaderboard */
     #view-leaderboard {
-      display: none; height: 100%; flex-direction: column;
+      display: none; height: 100%; flex-direction: column; justify-content: center; align-items: center;
+      position: relative; padding: 1.5rem 0;
+    }
+    .lb-header-box {
+      text-align: center; margin-bottom: 2rem;
     }
     .lb-header-title {
+      font-family: 'Poppins', sans-serif; font-size: 3rem; font-weight: 900;
+      background: linear-gradient(135deg, #f5a623 0%, #ffd700 50%, #f5a623 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 35px rgba(245, 166, 35, 0.4);
+      letter-spacing: 2px;
+      margin-bottom: 0.35rem;
+    }
+    .lb-header-sub {
+      color: var(--gray); font-size: 1.2rem; font-weight: 500;
+    }
+    .stage-podium-showcase {
+      display: flex; justify-content: center; align-items: flex-end; gap: 2rem;
+      width: 100%; max-width: 1150px; margin: 0 auto;
+    }
+    .podium-card {
+      flex: 1; border-radius: 24px; padding: 2rem 1.5rem; text-align: center;
+      position: relative; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      animation: podiumSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      opacity: 0; transform: translateY(40px);
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+    }
+    @keyframes podiumSlideUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .podium-card.rank-1 {
+      order: 2; height: 420px;
+      background: linear-gradient(180deg, rgba(245, 166, 35, 0.22) 0%, rgba(17, 24, 39, 0.95) 100%);
+      border: 3px solid #f5a623;
+      box-shadow: 0 0 60px rgba(245, 166, 35, 0.4), inset 0 0 25px rgba(245, 166, 35, 0.2);
+      animation-delay: 0.25s;
+    }
+    .podium-card.rank-2 {
+      order: 1; height: 360px;
+      background: linear-gradient(180deg, rgba(148, 163, 184, 0.18) 0%, rgba(17, 24, 39, 0.95) 100%);
+      border: 2px solid #94a3b8;
+      box-shadow: 0 0 35px rgba(148, 163, 184, 0.25);
+      animation-delay: 0.1s;
+    }
+    .podium-card.rank-3 {
+      order: 3; height: 330px;
+      background: linear-gradient(180deg, rgba(205, 127, 50, 0.18) 0%, rgba(17, 24, 39, 0.95) 100%);
+      border: 2px solid #cd7f32;
+      box-shadow: 0 0 35px rgba(205, 127, 50, 0.25);
+      animation-delay: 0.2s;
+    }
+    .podium-crown {
+      font-size: 3.5rem; margin-bottom: 0.35rem; filter: drop-shadow(0 0 15px rgba(245, 166, 35, 0.8));
+      animation: crownBounce 2.2s ease-in-out infinite;
+    }
+    @keyframes crownBounce {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-7px) scale(1.08); }
+    }
+    .podium-rank-badge {
+      display: inline-block; padding: 4px 18px; border-radius: 20px; font-weight: 800; font-size: 1.05rem;
+      margin-bottom: 0.6rem; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .podium-card.rank-1 .podium-rank-badge { background: #f5a623; color: #000; box-shadow: 0 0 15px rgba(245,166,35,0.6); }
+    .podium-card.rank-2 .podium-rank-badge { background: #94a3b8; color: #000; }
+    .podium-card.rank-3 .podium-rank-badge { background: #cd7f32; color: #fff; }
+    .podium-name {
+      font-family: 'Poppins', sans-serif; font-size: 1.7rem; font-weight: 800;
+      color: #fff; margin-bottom: 0.25rem; max-width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .podium-leader {
+      font-size: 0.95rem; color: var(--gray); margin-bottom: 0.85rem;
+    }
+    .podium-cap {
       font-family: 'Poppins', sans-serif; font-size: 2.5rem; font-weight: 900;
-      color: var(--gold); text-align: center; margin-bottom: 1.5rem;
+      color: var(--green); text-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
     }
-    .stage-lb-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; flex: 1;
+    .podium-cap.debt {
+      color: var(--red); text-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
     }
-    .podium-box {
-      background: var(--card); border: 2px solid var(--gold);
-      border-radius: 20px; padding: 2rem; display: flex; flex-direction: column;
-      justify-content: space-around; box-shadow: 0 0 40px rgba(245,166,35,0.2);
+    .debt-badge {
+      display: inline-block; background: rgba(239, 68, 68, 0.2); border: 1px solid var(--red);
+      color: var(--red); font-size: 0.8rem; font-weight: 700; padding: 2px 10px; border-radius: 8px; margin-top: 4px;
     }
-    .podium-item {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 1rem 1.5rem; border-radius: 12px; background: rgba(255,255,255,0.03);
+    .stage-runners-up {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 0.85rem;
+      margin-top: 1.75rem; width: 100%; max-width: 1150px;
     }
-    .podium-item.p1 { border: 2px solid var(--gold); background: rgba(245,166,35,0.1); }
-    .podium-rank { font-size: 2.5rem; }
-    .podium-name { font-family: 'Poppins', sans-serif; font-size: 1.4rem; font-weight: 700; }
-    .podium-leader { font-size: 0.85rem; color: var(--gray); }
-    .podium-cap { font-family: 'Poppins', sans-serif; font-size: 1.8rem; font-weight: 800; color: var(--green); }
-
-    .stage-table-box {
-      background: var(--card); border: 2px solid var(--card-border);
-      border-radius: 20px; padding: 1.5rem; overflow-y: auto;
+    .runner-pill {
+      background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px; padding: 0.55rem 1.25rem; display: flex; align-items: center; gap: 0.85rem;
+      backdrop-filter: blur(8px);
     }
-    .st-table { width: 100%; border-collapse: collapse; }
-    .st-table th {
-      padding: 0.75rem 1rem; font-size: 0.9rem; text-transform: uppercase;
-      letter-spacing: 1px; color: var(--gray); border-bottom: 2px solid var(--card-border);
-      text-align: left;
-    }
-    .st-table td {
-      padding: 0.7rem 1rem; font-size: 1.15rem; border-bottom: 1px solid rgba(51,65,85,0.5);
-    }
-    .st-rank { font-weight: 700; color: var(--gold); width: 60px; font-size: 1.25rem; }
-    .st-name { font-weight: 600; }
-    .st-leader { font-size: 0.8rem; color: var(--gray); }
-    .st-cap { font-family: 'Poppins', sans-serif; font-weight: 800; color: var(--green); }
+    .runner-rank { font-weight: 800; color: var(--gold); font-size: 1.05rem; }
+    .runner-name { font-weight: 600; color: #fff; font-size: 1rem; }
+    .runner-cap { font-family: 'Poppins', sans-serif; font-weight: 700; color: var(--green); }
+    .runner-cap.debt { color: var(--red); }
 
     /* Canvas Confetti */
     #stage-confetti {
@@ -464,7 +521,7 @@
           <ul class="lobby-rules-list">
             <li>Form your Syndicate (~4 Members per Team)</li>
             <li>Register Team Name, Leader Name & Password</li>
-            <li>Initial Liquid Capital: ₹10,000</li>
+            <li id="lobby-rules-capital">Initial Principle Capital: ₹10,000</li>
             <li>In each round: Exactly one venture is bluffing!</li>
           </ul>
         </div>
@@ -505,21 +562,15 @@
 
     <!-- VIEW 4: LEADERBOARD -->
     <div id="view-leaderboard">
-      <h2 class="lb-header-title">🏆 TOP VENTURE FUNDS STANDINGS</h2>
-      <div class="stage-lb-grid">
-        <div class="podium-box" id="stage-podium">
-          <!-- Top 3 -->
-        </div>
-        <div class="stage-table-box">
-          <table class="st-table">
-            <thead>
-              <tr><th>#</th><th>Fund Name</th><th>Capital</th></tr>
-            </thead>
-            <tbody id="stage-lb-rows">
-              <!-- Top 4-10 -->
-            </tbody>
-          </table>
-        </div>
+      <div class="lb-header-box">
+        <h2 class="lb-header-title">🏆 VENTURE CAPITAL STANDINGS</h2>
+        <div class="lb-header-sub">Official Syndicate Rankings • Spot The Bluff, Compound The Capital</div>
+      </div>
+      <div class="stage-podium-showcase" id="stage-podium">
+        <!-- Rendered by renderLeaderboardView -->
+      </div>
+      <div class="stage-runners-up" id="stage-runners-up">
+        <!-- Ranks 4+ -->
       </div>
     </div>
   </div>
@@ -654,43 +705,71 @@
       });
     }
 
+    function escapeHtml(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
     function renderLeaderboardView(lb) {
       leaderboard = lb || [];
       const podium = $('#stage-podium');
-      const rows = $('#stage-lb-rows');
+      const runnersUp = $('#stage-runners-up');
+      if (!podium) return;
       podium.innerHTML = '';
-      rows.innerHTML = '';
+      if (runnersUp) runnersUp.innerHTML = '';
 
-      const medals = ['🥇', '🥈', '🥉'];
+      if (!leaderboard || leaderboard.length === 0) {
+        podium.innerHTML = '<div style="color:var(--gray);font-size:1.4rem;padding:3rem;">No syndicate funds recorded yet.</div>';
+        return;
+      }
+
       const top3 = leaderboard.slice(0, 3);
       const rest = leaderboard.slice(3, 10);
 
-      top3.forEach((t, i) => {
-        const div = document.createElement('div');
-        div.className = `podium-item ${i === 0 ? 'p1' : ''}`;
-        div.innerHTML = `
-          <span class="podium-rank">${medals[i]}</span>
-          <div>
-            <div class="podium-name">${t.name}</div>
-            ${t.leaderName ? `<div class="podium-leader">Leader: ${t.leaderName}</div>` : ''}
-          </div>
-          <span class="podium-cap">₹${Math.round(t.capital).toLocaleString('en-IN')}</span>
+      // Order for visual display: Rank 2 (Silver) on Left, Rank 1 (Gold) in Center, Rank 3 (Bronze) on Right
+      const displayOrder = [];
+      if (top3[1]) displayOrder.push({ ...top3[1], actualRank: 2 });
+      if (top3[0]) displayOrder.push({ ...top3[0], actualRank: 1 });
+      if (top3[2]) displayOrder.push({ ...top3[2], actualRank: 3 });
+
+      displayOrder.forEach((t) => {
+        const isDebt = t.capital < 0;
+        const capFormatted = isDebt
+          ? `-₹${Math.abs(Math.round(t.capital)).toLocaleString('en-IN')}`
+          : `₹${Math.round(t.capital).toLocaleString('en-IN')}`;
+
+        const card = document.createElement('div');
+        card.className = `podium-card rank-${t.actualRank}`;
+        card.innerHTML = `
+          ${t.actualRank === 1 ? '<div class="podium-crown">👑</div>' : ''}
+          <div class="podium-rank-badge">${t.actualRank === 1 ? '🥇 1st Place' : t.actualRank === 2 ? '🥈 2nd Place' : '🥉 3rd Place'}</div>
+          <div class="podium-name">${escapeHtml(t.name)}</div>
+          <div class="podium-leader">${t.leaderName ? 'Leader: ' + escapeHtml(t.leaderName) : ''} ${t.enrollmentNo ? '• ' + escapeHtml(t.enrollmentNo) : ''}</div>
+          <div class="podium-cap ${isDebt ? 'debt' : ''}">${capFormatted}</div>
+          ${isDebt ? '<div class="debt-badge">🚨 IN DEBT</div>' : ''}
         `;
-        podium.appendChild(div);
+        podium.appendChild(card);
       });
 
-      rest.forEach((t, i) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="st-rank">#${i + 4}</td>
-          <td class="st-name">
-            ${t.name}
-            ${t.leaderName ? `<div class="st-leader">Leader: ${t.leaderName}</div>` : ''}
-          </td>
-          <td class="st-cap">₹${Math.round(t.capital).toLocaleString('en-IN')}</td>
-        `;
-        rows.appendChild(tr);
-      });
+      if (runnersUp && rest.length > 0) {
+        rest.forEach((t, idx) => {
+          const isDebt = t.capital < 0;
+          const capFormatted = isDebt
+            ? `-₹${Math.abs(Math.round(t.capital)).toLocaleString('en-IN')}`
+            : `₹${Math.round(t.capital).toLocaleString('en-IN')}`;
+          const pill = document.createElement('div');
+          pill.className = 'runner-pill';
+          pill.innerHTML = `
+            <span class="runner-rank">#${idx + 4}</span>
+            <span class="runner-name">${escapeHtml(t.name)}</span>
+            <span class="runner-cap ${isDebt ? 'debt' : ''}">${capFormatted}</span>
+            ${isDebt ? '<span class="debt-badge" style="font-size:0.7rem;padding:1px 6px;">DEBT</span>' : ''}
+          `;
+          runnersUp.appendChild(pill);
+        });
+      }
     }
 
     function triggerConfetti() {
@@ -902,10 +981,13 @@
     socket.on('results_reveal', (data) => {
       renderReveal(data);
       switchView('reveal');
-      setTimeout(() => {
-        if (data.leaderboard) renderLeaderboardView(data.leaderboard);
-        switchView('leaderboard');
-      }, 7000);
+      // Stock reveal stays on screen! No auto-switch to leaderboard!
+    });
+
+    socket.on('show_leaderboard', (data) => {
+      if (data && data.leaderboard) renderLeaderboardView(data.leaderboard);
+      switchView('leaderboard');
+      triggerConfetti();
     });
 
     socket.on('leaderboard_update', (data) => {
@@ -918,6 +1000,9 @@
       if ($('#stage-stat-teams')) $('#stage-stat-teams').textContent = count;
       if ($('#lobby-teams-count')) $('#lobby-teams-count').textContent = `${count} TEAMS READY`;
       if ($('#stage-round-badge')) $('#stage-round-badge').textContent = data.round ? `ROUND ${data.round}` : 'LOBBY';
+      if (data.startingCapital && $('#lobby-rules-capital')) {
+        $('#lobby-rules-capital').textContent = `Initial Principle Capital: ₹${Number(data.startingCapital).toLocaleString('en-IN')}`;
+      }
       if ($('#stage-stat-status')) $('#stage-stat-status').textContent = (data.state || '').replace(/_/g, ' ').toUpperCase();
 
       const sub = data.submittedCount || 0;

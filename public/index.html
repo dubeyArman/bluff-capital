@@ -192,26 +192,19 @@
       </div>
       <div class="results-summary">
         <div class="result-capital-change">
-          <span class="result-label">New Capital</span>
+          <span class="result-label">Your Capital</span>
           <span class="result-capital-value" id="result-new-capital">₹10,000</span>
         </div>
-        <div class="result-rank" id="result-rank"></div>
       </div>
-      <div class="results-actions">
-        <button class="btn btn-secondary" id="btn-view-leaderboard">View Leaderboard</button>
-        <button class="btn btn-outline" id="btn-continue" style="display:none;">Continue</button>
+      <div class="results-waiting-card" style="margin-top:1.5rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:1.25rem;text-align:center;">
+        <div style="font-size:1.6rem;margin-bottom:0.35rem;">⏳</div>
+        <div id="results-next-status" style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1.05rem;color:var(--gold);margin-bottom:0.4rem;">
+          Round Concluded!
+        </div>
+        <div style="color:var(--gray-300);font-size:0.85rem;line-height:1.4;">
+          Waiting for host to start next round. Keep your eyes on the stage projector for live market announcements!
+        </div>
       </div>
-    </div>
-  </div>
-
-  <!-- ========== SCREEN 6: LEADERBOARD ========== -->
-  <div class="screen" id="screen-leaderboard">
-    <div class="leaderboard-container">
-      <h2 class="leaderboard-title">📊 Live Standings</h2>
-      <div class="leaderboard-list" id="leaderboard-list">
-        <!-- Filled by JS -->
-      </div>
-      <button class="btn btn-outline" id="btn-back-from-lb">Back</button>
     </div>
   </div>
 
