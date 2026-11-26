@@ -25,29 +25,33 @@
   let isCountdownActive = false;
 
   const roundThemes = {
-    1: 'Mobility & Electronics',
-    2: 'Finance & Insurance',
-    3: 'Health & Consumer',
-    4: 'Resources & Space',
+    1: 'Campus Food Economy',
+    2: 'Travel & Tourism',
+    3: 'AI SaaS',
+    4: 'SpaceTech',
   };
 
   const defaultIcons = {
-    'NovaCell Solid-State': '🔋',
-    'VoltRide Mobility': '🛴',
-    'ChipLink Packaging': '🔬',
-    'TerraBattery Recycling': '♻️',
-    'LedgerLoop Payroll': '📊',
-    'Harbor Trade Finance': '🚢',
-    'Meridian Wealth Advisors': '📈',
-    'CoverNow Insurance': '🛡️',
-    'DermaGlow Skincare': '✨',
-    'PulseBand Wearables': '⌚',
-    'CareBridge Telehealth': '🩺',
-    'FreshRoute Cold Chain': '🚛',
-    'HelioWater Desal': '💧',
-    'AgriSense Drones': '🌾',
-    'CopperRoots Mining': '⛏️',
-    'OrbitLink Satellites': '🛰️',
+    // Round 1
+    'The Caffeine Vault': '☕',
+    'Momo District': '🥟',
+    'The Chaat Society': '🍟',
+    'Bukhara x Beijing': '🚚',
+    // Round 2
+    'Nonlocals': '🏔️',
+    'RidgeRoute Experiences': '🥾',
+    'StayCircle': '🏡',
+    'PeakPass Holidays': '🎟️',
+    // Round 3
+    'ModelForge AI': '🤖',
+    'LedgerLens AI': '📑',
+    'PromptPilot Technologies': '🪄',
+    'SignalDesk AI': '🎧',
+    // Round 4
+    'TerraOrbit Intelligence': '🛰️',
+    'AstraForge Propulsion': '🚀',
+    'StratoLeap Aerospace': '🌌',
+    'SkyTrace Orbital': '📡',
   };
 
   // ---- Socket ----

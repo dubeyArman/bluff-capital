@@ -555,7 +555,7 @@
           <tr>
             <td>
               <div class="m-round-title">Round 1</div>
-              <div class="m-round-sub">Mobility &amp; Electronics</div>
+              <div class="m-round-sub">Campus Food Economy</div>
             </td>
             <td>
               <span class="m-status-badge" id="status-r1">PENDING</span>
@@ -578,7 +578,7 @@
           <tr>
             <td>
               <div class="m-round-title">Round 2</div>
-              <div class="m-round-sub">Finance &amp; Insurance</div>
+              <div class="m-round-sub">Travel &amp; Tourism</div>
             </td>
             <td>
               <span class="m-status-badge" id="status-r2">PENDING</span>
@@ -601,7 +601,7 @@
           <tr>
             <td>
               <div class="m-round-title">Round 3</div>
-              <div class="m-round-sub">Health &amp; Consumer</div>
+              <div class="m-round-sub">AI SaaS</div>
             </td>
             <td>
               <span class="m-status-badge" id="status-r3">PENDING</span>
@@ -624,7 +624,7 @@
           <tr>
             <td>
               <div class="m-round-title">Round 4</div>
-              <div class="m-round-sub">Resources &amp; Space</div>
+              <div class="m-round-sub">SpaceTech</div>
             </td>
             <td>
               <span class="m-status-badge" id="status-r4">PENDING</span>
@@ -765,44 +765,44 @@
 
     const roundData = {
       1: {
-        theme: 'Mobility & Electronics',
+        theme: 'Campus Food Economy',
         companies: [
-          { name: 'NovaCell Solid-State', returnPct: -100, bluff: true, desc: "Has a working lab prototype of a solid-state EV battery. Says it will supply 3 carmakers by next year at half today's battery price.", why: "Lab prototype to mass supply at half price in one year skips the hard part. Pilot programs are not supply deals." },
-          { name: 'VoltRide Mobility', returnPct: 12, bluff: false, desc: "Rents electric scooters in 3 cities. Lost money last year, but cost per ride fell 22% and repeat riders are rising.", why: "Losses look scary, but unit costs are improving and the policy trend backs it." },
-          { name: 'ChipLink Packaging', returnPct: 15, bluff: false, desc: "Provides advanced packaging for AI chips. One large customer gives 70% of its orders. Factory expansion is already funded.", why: "Customer concentration is a risk, but the funded expansion and demand are real." },
-          { name: 'TerraBattery Recycling', returnPct: -5, bluff: false, desc: "Recovers metals from used EV batteries. Claims 95% recovery, verified by an independent lab after a 6-month pilot plant run.", why: "Claim is verified, but demand is still early. Real company, slow start." }
+          { name: 'The Caffeine Vault', returnPct: -100, bluff: true, desc: "Campus coffee brand offering cold brews, lattes, energy drinks and snack combos. Targets students through affordable drinks, repeat purchases and loyalty plans. Plans two new campus outlets and bottled cold brew.", why: "Bottled distribution and multi-outlet expansion with razor-thin student margins burned cash rapidly. The expansion claims outpaced actual unit economics." },
+          { name: 'Momo District', returnPct: 22, bluff: false, desc: "Quick-service momo brand offering steamed, fried and innovative varieties. Targets students through affordable snacks, combos and bulk orders. Plans franchise kiosks across nearby college campuses.", why: "Low cost of goods, rapid table turnover, and high-margin bulk student party orders drove solid 22% gains." },
+          { name: 'The Chaat Society', returnPct: 14, bluff: false, desc: "Street-food brand offering chaat, gol gappa, bhel and loaded fries. Targets students with affordable, customisable snacks and group platters. Plans seasonal menus and late-evening combos.", why: "Consistent evening footfall and high-margin loaded snack platters delivered steady 14% returns." },
+          { name: 'Bukhara x Beijing', returnPct: 28, bluff: false, desc: "Food truck combining North Indian and Indo-Chinese cuisines. Targets students through late-night meals, combos and event catering. Plans two additional trucks and college festival partnerships.", why: "Monopolizing late-night campus hunger and landing high-ticket college festival catering contracts yielded a massive 28% profit." }
         ],
-        bluffHint: "Ask: 'What has to happen between a lab prototype and supplying three carmakers at half the price in 12 months?'"
+        bluffHint: "Ask: 'Can a single-campus coffee booth fund commercial cold-brew bottling lines and two new outlets purely from student lattes?'"
       },
       2: {
-        theme: 'Finance & Insurance',
+        theme: 'Travel & Tourism',
         companies: [
-          { name: 'LedgerLoop Payroll', returnPct: 13, bluff: false, desc: "Payroll software for small businesses. Loses about 3% of customers each month but adds about 9%. Monthly subscription model.", why: "Churn sounds bad, but new customers clearly outpace it." },
-          { name: 'Harbor Trade Finance', returnPct: 6, bluff: false, desc: "Lends to exporters against unpaid invoices, funded by a bank credit line. Defaults are about 2% of loans.", why: "Delays raise demand for this lending, and 2% defaults are manageable." },
-          { name: 'Meridian Wealth Advisors', returnPct: -100, bluff: true, desc: "AI investing adviser showing 18% yearly returns for 3 years, with a Big-4 audit of its system. Charges a 1% fee.", why: "The audit covers the software, not the returns. The 18% is from a back-tested model, not real client money." },
-          { name: 'CoverNow Insurance', returnPct: -8, bluff: false, desc: "Flood insurance priced using satellite data. Sold to 20,000 homes. One bad monsoon could cause large claims.", why: "Real company, but the risk it warned about actually happened this period." }
+          { name: 'Nonlocals', returnPct: 20, bluff: false, desc: "Student-led travel community organising group trips to Manali, Jibhi, Shimla and Dharamshala. Focuses on social experiences, group bookings and repeat customers. Plans to build a recognisable youth travel community.", why: "Viral campus word-of-mouth, zero ad spend, and high repeat group bookings generated a robust 20% return." },
+          { name: 'RidgeRoute Experiences', returnPct: 16, bluff: false, desc: "Adventure travel company offering guided treks and outdoor experiences. Targets students and young professionals through group trips and corporate retreats. Plans local partnerships and Northeast adventure circuits.", why: "Premium corporate weekend retreat contracts stabilized cash flows and delivered 16% profits." },
+          { name: 'StayCircle', returnPct: -10, bluff: false, desc: "TravelTech marketplace connecting independent homestays, hostels and boutique stays with budget travellers. Earns through booking commissions and premium listings. Plans a verified-stay programme and expansion into 20 destinations.", why: "Real platform, but aggressive 20-city expansion and host onboarding subsidies outpaced booking fee commissions, resulting in a 10% drag." },
+          { name: 'PeakPass Holidays', returnPct: -100, bluff: true, desc: "Student travel company offering affordable group packages across mountain destinations. Earns through advance bookings, campus referrals and travel add-ons. Plans expansion to 50 colleges and an annual travel membership.", why: "Ponzi-like advance cash collection: promised cheap peak-season mountain stays without contracted hotel inventory. Cash collapsed when season began." }
         ],
-        bluffHint: "Ask: 'Were those 18% returns earned by real client accounts, or are they from a model tested on past data?'"
+        bluffHint: "Ask: 'How does an early-stage operator guarantee fixed-cost mountain stays across 50 campuses without pre-buying hotel inventory?'"
       },
       3: {
-        theme: 'Health & Consumer',
+        theme: 'AI SaaS',
         companies: [
-          { name: 'DermaGlow Skincare', returnPct: 9, bluff: false, desc: "Sells skincare online. Spends 60% of revenue on influencer ads, but 55% of buyers reorder within 3 months.", why: "High ad spend is offset by strong repeat buying." },
-          { name: 'PulseBand Wearables', returnPct: -100, bluff: true, desc: "Smartwatch that reads blood sugar without needles. Says a 5,000-user trial is complete and preorders are open.", why: "Trial was run by its own team and no regulator has cleared the sugar-reading claim. Preorders are not approval." },
-          { name: 'CareBridge Telehealth', returnPct: 14, bluff: false, desc: "Video consults for long-term patients, paid by insurers. Insurers pay slowly, so cash arrives late, but contracts are signed.", why: "Slow payment is a cash flow issue, not a fake business." },
-          { name: 'FreshRoute Cold Chain', returnPct: 5, bluff: false, desc: "Refrigerated trucks for vaccines and fruit. Owns 200 trucks bought with loans, so debt is high, but trucks run 85% full.", why: "High debt, but full trucks and government support keep it afloat." }
+          { name: 'ModelForge AI', returnPct: 25, bluff: false, desc: "Enterprise AI platform connecting business data with AI models to automate workflows. Targets mid-sized businesses through subscriptions, API usage and implementation fees. Plans industry-specific AI templates and Southeast Asian expansion.", why: "High enterprise retention, recurring annual SaaS licenses, and sticky workflow integrations powered a standout 25% gain." },
+          { name: 'LedgerLens AI', returnPct: 14, bluff: false, desc: "AI accounting software automating reconciliation, transaction categorisation and financial reporting. Targets SMEs through subscriptions and financial integrations. Plans more accounting integrations and automated tax-document preparation.", why: "Low churn and automated bookkeeping subscriptions created dependable, high-margin 14% gains." },
+          { name: 'PromptPilot Technologies', returnPct: -100, bluff: true, desc: "Enterprise platform helping businesses create and optimise prompts across AI models. Claims to improve response quality while reducing API costs. Plans a proprietary model evaluation engine and US expansion.", why: "Pure API wrapper with zero technical moat. Built-in LLM system updates rendered their prompt optimization tool redundant overnight." },
+          { name: 'SignalDesk AI', returnPct: 20, bluff: false, desc: "AI customer support platform automating queries and assisting support agents. Targets e-commerce and service businesses through subscriptions and integrations. Plans voice-based support and expansion into banking and insurance.", why: "Strong e-commerce tier-1 ticket resolution rates saved clients 40% in staffing, fueling 20% portfolio gains." }
         ],
-        bluffHint: "Ask: 'Who ran the trial, and which regulator has approved the blood sugar reading?'"
+        bluffHint: "Ask: 'Is prompt optimization a defensible multi-million-dollar software product, or just a temporary wrapper around LLM APIs?'"
       },
       4: {
-        theme: 'Resources & Space',
+        theme: 'SpaceTech',
         companies: [
-          { name: 'HelioWater Desal', returnPct: 11, bluff: false, desc: "Solar-powered desalination for coastal towns. Two plants running under 15-year government contracts. Growth is slow.", why: "Slow, but long contracts mean steady income." },
-          { name: 'AgriSense Drones', returnPct: -6, bluff: false, desc: "Crop-monitoring drones, paid per acre by farmers. Income is seasonal, with weak months after harvest.", why: "Seasonal dips hurt this period, but the business is real." },
-          { name: 'CopperRoots Mining', returnPct: 17, bluff: false, desc: "Explores for copper. Has a survey report and a land lease, no revenue until drilling pays off in about 3 years. Needs funding.", why: "Looks like a bluff (no revenue, asks for money), but the survey report and lease make it real." },
-          { name: 'OrbitLink Satellites', returnPct: -100, bluff: true, desc: "Has launched 12 satellites and says it will give global internet next year. Claims $50M revenue from preorders.", why: "Global coverage needs hundreds of satellites, and preorders are not revenue." }
+          { name: 'TerraOrbit Intelligence', returnPct: 22, bluff: false, desc: "Satellite data company providing insights for agriculture, infrastructure and environmental monitoring. Processes imagery from external satellite providers into actionable business intelligence. Plans insurance risk assessment and international agriculture expansion.", why: "Asset-light model buying open satellite data and selling high-value crop monitoring contracts delivered an impressive 22% return." },
+          { name: 'AstraForge Propulsion', returnPct: 28, bluff: false, desc: "Aerospace company developing propulsion components for private satellite launch companies. Earns through manufacturing contracts, engineering services and supply agreements. Plans expanded testing facilities and next-generation propulsion components.", why: "Exclusive propulsion supply contracts with private rocket launchers delivered high-margin aerospace contracts and a huge 28% gain." },
+          { name: 'StratoLeap Aerospace', returnPct: -100, bluff: true, desc: "Aerospace company developing reusable small-satellite launch vehicles to reduce launch costs. Claims two successful launch missions and plans commercial satellite launch services. Targets commercial orbital launches within 18 months and international expansion.", why: "Faked mission track record: the two 'successful launches' were suborbital model tests. Complete failure to develop an orbital rocket; investor funds evaporated." },
+          { name: 'SkyTrace Orbital', returnPct: 18, bluff: false, desc: "Satellite intelligence company monitoring land use, floods and infrastructure development. Serves businesses, insurers and government agencies through analytics and monitoring contracts. Plans expansion into disaster prediction and insurance risk intelligence.", why: "Multi-year disaster monitoring contracts with state agencies and insurance underwriters yielded an 18% return." }
         ],
-        bluffHint: "Ask: 'How many satellites does global coverage need, and is a preorder the same as revenue?'"
+        bluffHint: "Ask: 'Has an early-stage startup really achieved two commercial orbital launches with reusable rockets in 18 months, or are they suborbital prototypes?'"
       }
     };
 
