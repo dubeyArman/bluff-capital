@@ -507,6 +507,33 @@
       </div>
     </header>
 
+    <!-- ALLOCATE STARTING CAPITAL / PRINCIPAL FUNDS TO ALL PARTICIPANTS -->
+    <div class="capital-allocation-card" style="background:linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95)); border:2px solid rgba(245,166,35,0.4); border-radius:16px; padding:1.25rem 1.75rem; margin-bottom:1.5rem; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1.25rem; box-shadow:0 8px 32px rgba(0,0,0,0.37);">
+      <div>
+        <div style="display:flex; align-items:center; gap:0.6rem; font-family:'Poppins',sans-serif; font-weight:800; font-size:1.15rem; color:#f5a623;">
+          <span>💰</span> ALLOCATE PRINCIPAL FUNDS TO ALL PARTICIPANTS
+        </div>
+        <div style="font-size:0.85rem; color:var(--gray); margin-top:0.25rem;">
+          Assign the exact same starting capital to every participant. All participants play with this principal amount from Round 1.
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+        <div style="position:relative;">
+          <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--gold); font-weight:700;">₹</span>
+          <input type="number" id="input-starting-cap" value="10000" min="1000" step="1000" style="padding:0.6rem 0.8rem 0.6rem 1.8rem; background:rgba(0,0,0,0.4); border:1px solid rgba(245,166,35,0.5); border-radius:8px; color:#fff; font-family:'Poppins',sans-serif; font-size:1.1rem; font-weight:700; width:140px;" />
+        </div>
+        <div style="display:flex; gap:0.4rem;">
+          <button type="button" class="btn btn-outline" style="padding:0.45rem 0.75rem; font-size:0.82rem;" onclick="setStartingCapQuick(10000)">₹10k</button>
+          <button type="button" class="btn btn-outline" style="padding:0.45rem 0.75rem; font-size:0.82rem;" onclick="setStartingCapQuick(25000)">₹25k</button>
+          <button type="button" class="btn btn-outline" style="padding:0.45rem 0.75rem; font-size:0.82rem;" onclick="setStartingCapQuick(50000)">₹50k</button>
+          <button type="button" class="btn btn-outline" style="padding:0.45rem 0.75rem; font-size:0.82rem;" onclick="setStartingCapQuick(100000)">₹100k</button>
+        </div>
+        <button type="button" class="btn btn-gold" id="btn-allocate-funds" onclick="allocateFunds()" style="font-weight:700; padding:0.65rem 1.3rem;">
+          💰 Allocate to All Participants
+        </button>
+      </div>
+    </div>
+
     <!-- 4-ROUND STAGE & GAME CONTROL MATRIX -->
     <div class="matrix-card">
       <div class="matrix-title-bar">
@@ -921,6 +948,30 @@
         refreshState();
       } catch (e) {
         toast(e.message || 'Action failed', 'error');
+      }
+    };
+
+    window.setStartingCapQuick = function(amt) {
+      const inp = document.getElementById('input-starting-cap');
+      if (inp) inp.value = amt;
+    };
+
+    window.allocateFunds = async function() {
+      const inp = document.getElementById('input-starting-cap');
+      const amount = inp ? parseInt(inp.value, 10) : 10000;
+      if (!amount || amount <= 0 || isNaN(amount)) {
+        toast('Please enter a valid positive capital amount', 'error');
+        return;
+      }
+      if (!confirm(`Are you sure you want to allocate ₹${amount.toLocaleString('en-IN')} starting funds equally to ALL participants?`)) {
+        return;
+      }
+      try {
+        const res = await hostApi('POST', '/set-starting-capital', { amount });
+        toast(`Successfully allocated ₹${amount.toLocaleString('en-IN')} to all participants!`, 'success');
+        refreshState();
+      } catch (e) {
+        toast(e.message || 'Failed to allocate funds', 'error');
       }
     };
 

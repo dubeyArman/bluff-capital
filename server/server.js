@@ -72,7 +72,7 @@ app.use(async (req, res, next) => {
 });
 
 const HOST_PASSWORD = 'bluffcapital2026';
-const STARTING_CAPITAL = 10000;
+let STARTING_CAPITAL = 10000;
 const TIMER_SECONDS = 90;
 let projectorView = 'auto';
 const PORT = process.env.PORT || 3000;
@@ -1040,8 +1040,8 @@ app.post(['/api/invest', '/invest'], async (req, res) => {
   }
 
   const sum = allocations.reduce((a, b) => a + b, 0);
-  if (sum < 0 || sum > 100) {
-    return res.status(400).json({ error: `Portfolio allocations cannot exceed 100%. Current sum: ${sum}%.` });
+  if (sum !== 100) {
+    return res.status(400).json({ error: `Portfolio allocations must total exactly 100% across the 4 companies. Current total: ${sum}%.` });
   }
 
   team.investments[roundNum] = allocations;
@@ -1591,8 +1591,8 @@ app.post(['/api/host/projector/view', '/host/projector/view'], async (req, res) 
   return res.json({ success: true, projectorView });
 });
 
-// Host: Set Principle Starting Capital (Before round or tournament)
-app.post(['/api/host/set-starting-capital', '/host/set-starting-capital'], async (req, res) => {
+// Host: Set Principle Starting Capital / Allocate Funds (Before round or tournament)
+app.post(['/api/host/set-starting-capital', '/host/set-starting-capital', '/api/host/allocate-funds', '/host/allocate-funds'], async (req, res) => {
   if (!verifyHost(req, res)) return;
   loadStateFromDisk();
   const { amount } = req.body;
@@ -1606,6 +1606,7 @@ app.post(['/api/host/set-starting-capital', '/host/set-starting-capital'], async
   // Update all registered teams' starting capital
   for (const team of teams.values()) {
     team.capital = STARTING_CAPITAL;
+    team.isBankrupt = false;
     team.investments = {};
     team.history = [];
     team.lockedIn = false;
@@ -1618,6 +1619,7 @@ app.post(['/api/host/set-starting-capital', '/host/set-starting-capital'], async
   return res.json({
     success: true,
     startingCapital: STARTING_CAPITAL,
+    teamCount: teams.size,
     message: `Principle Starting Capital set to ₹${STARTING_CAPITAL.toLocaleString('en-IN')} for all ${teams.size} teams!`
   });
 });
