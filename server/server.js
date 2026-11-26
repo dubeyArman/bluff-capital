@@ -702,9 +702,39 @@ function autoLockInvestments() {
 }
 
 // ─── Capital Economics Engine ────────────────────────────────────────────────
+const calculatedRounds = new Set();
+const roundResultsCache = {};
+
 function calculateResults(roundNum) {
   const roundData = getRoundData(roundNum);
   if (!roundData) return;
+
+  // Idempotency Guard: If this round has ALREADY been calculated, do NOT re-deduct or re-multiply capital!
+  if (calculatedRounds.has(roundNum) && roundResultsCache[roundNum]) {
+    const cached = roundResultsCache[roundNum];
+    const lb = getLeaderboard();
+    lb.forEach((entry) => {
+      if (cached.teamResultsMap[entry.teamId]) {
+        cached.teamResultsMap[entry.teamId].rank = entry.rank;
+      }
+    });
+    io.emit('results_reveal', {
+      round: roundNum,
+      theme: roundData.theme,
+      companies: roundData.companies.map((c) => ({
+        name: c.name,
+        shortName: c.shortName,
+        icon: c.icon,
+        returnPct: c.returnPct,
+        isBluff: !!c.isBluff,
+      })),
+      teamResults: cached.teamResults,
+      teamResultsMap: cached.teamResultsMap,
+      leaderboard: lb,
+    });
+    broadcastLeaderboard();
+    return;
+  }
 
   const teamResultsMap = {};
   const teamResults = [];
@@ -765,14 +795,17 @@ function calculateResults(roundNum) {
       }));
 
       team.capital = newCapital;
-      team.history.push({
+      const historyEntry = {
         round: roundNum,
         capitalBefore,
         capitalAfter: newCapital,
         heldCash: true,
         allocations: [0, 0, 0, 0],
         companyResults,
-      });
+      };
+      const exIdx = team.history.findIndex((h) => h.round === roundNum);
+      if (exIdx >= 0) team.history[exIdx] = historyEntry;
+      else team.history.push(historyEntry);
 
       const tRes = {
         teamId: team.id,
@@ -822,7 +855,7 @@ function calculateResults(roundNum) {
       team.capital = newCapital;
       team.isBankrupt = newCapital <= 0;
 
-      team.history.push({
+      const historyEntry = {
         round: roundNum,
         capitalBefore,
         capitalAfter: newCapital,
@@ -830,7 +863,10 @@ function calculateResults(roundNum) {
         cashReservePct: cashPct,
         allocations,
         companyResults,
-      });
+      };
+      const exIdx = team.history.findIndex((h) => h.round === roundNum);
+      if (exIdx >= 0) team.history[exIdx] = historyEntry;
+      else team.history.push(historyEntry);
 
       const tRes = {
         teamId: team.id,
@@ -872,6 +908,10 @@ function calculateResults(roundNum) {
     teamResultsMap,
     leaderboard: lb,
   });
+
+  // Cache results for idempotency so subsequent views do NOT re-deduct
+  calculatedRounds.add(roundNum);
+  roundResultsCache[roundNum] = { teamResults, teamResultsMap };
 
   broadcastLeaderboard();
 }
@@ -1040,8 +1080,8 @@ app.post(['/api/invest', '/invest'], async (req, res) => {
   }
 
   const sum = allocations.reduce((a, b) => a + b, 0);
-  if (sum !== 100) {
-    return res.status(400).json({ error: `Portfolio allocations must total exactly 100% across the 4 companies. Current total: ${sum}%.` });
+  if (sum < 0 || sum > 100) {
+    return res.status(400).json({ error: `Portfolio allocations cannot exceed 100%. Current sum: ${sum}%.` });
   }
 
   team.investments[roundNum] = allocations;
@@ -1554,7 +1594,6 @@ app.post(['/api/host/round/leaderboard', '/host/round/leaderboard', '/round/lead
   loadStateFromDisk();
   const reqRound = parseInt(req.body.round, 10);
   const roundNum = reqRound || currentRoundIndex() || 1;
-  calculateResults(roundNum);
   const lb = getLeaderboard();
   projectorView = 'leaderboard';
   if (roundNum === 4) {
@@ -1578,7 +1617,6 @@ app.post(['/api/host/projector/view', '/host/projector/view'], async (req, res) 
   if (!verifyHost(req, res)) return;
   const { view } = req.body;
   const roundNum = currentRoundIndex() || 1;
-  calculateResults(roundNum);
   const lb = getLeaderboard();
   if (view === 'leaderboard') {
     projectorView = 'leaderboard';
@@ -1602,6 +1640,8 @@ app.post(['/api/host/set-starting-capital', '/host/set-starting-capital', '/api/
   }
 
   STARTING_CAPITAL = num;
+  calculatedRounds.clear();
+  for (const k in roundResultsCache) delete roundResultsCache[k];
 
   // Update all registered teams' starting capital
   for (const team of teams.values()) {
@@ -1638,6 +1678,8 @@ app.post(['/api/host/reset', '/host/reset', '/reset'], async (req, res) => {
   gameState = 'waiting';
   teams = new Map();
   roundStatuses = { 1: 'pending', 2: 'pending', 3: 'pending', 4: 'pending' };
+  calculatedRounds.clear();
+  for (const k in roundResultsCache) delete roundResultsCache[k];
   timerRemaining = 0;
   timerTargetEnd = null;
   roundStartedAt = null;

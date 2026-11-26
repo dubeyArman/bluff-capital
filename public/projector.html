@@ -900,6 +900,51 @@
       } catch (e) {}
     }
 
+    function playStageRoundEndGong() {
+      try {
+        const ctx = getStageAudioCtx();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        // Deep resonant gong chords (C3, G3, C4, E4)
+        const tones = [
+          { freq: 130.81, gain: 0.35, decay: 2.2 },
+          { freq: 196.00, gain: 0.28, decay: 2.0 },
+          { freq: 261.63, gain: 0.22, decay: 1.8 },
+          { freq: 329.63, gain: 0.18, decay: 1.5 }
+        ];
+        tones.forEach((t) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(t.freq, now);
+          gain.gain.setValueAtTime(t.gain, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + t.decay);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + t.decay + 0.1);
+        });
+
+        // Crisp secondary market gavel / chime strike at +0.28s
+        const strike2 = [
+          { freq: 392.00, gain: 0.25, decay: 1.6 },
+          { freq: 523.25, gain: 0.20, decay: 1.4 }
+        ];
+        strike2.forEach((t) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(t.freq, now + 0.28);
+          gain.gain.setValueAtTime(t.gain, now + 0.28);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.28 + t.decay);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + 0.28);
+          osc.stop(now + 0.28 + t.decay + 0.1);
+        });
+      } catch (e) {}
+    }
+
     // Unlock audio on click anywhere on projector screen
     window.addEventListener('pointerdown', () => getStageAudioCtx(), { once: true });
     window.addEventListener('keydown', () => getStageAudioCtx(), { once: true });
@@ -1030,6 +1075,7 @@
 
     socket.on('round_ended_buffer', (data) => {
       if (data && data.round) currentRound = data.round;
+      playStageRoundEndGong();
       const bufTitle = $('#stage-buffer-title');
       if (bufTitle) bufTitle.textContent = `ROUND ${data.round || currentRound} CONCLUDED`;
       if (currentProjectorView !== 'leaderboard') {

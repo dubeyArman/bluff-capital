@@ -267,6 +267,31 @@
     } catch (e) {}
   }
 
+  function playRoundEndChime() {
+    try {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const notes = [
+        { freq: 440.00, gain: 0.25, decay: 1.5 },
+        { freq: 329.63, gain: 0.20, decay: 1.4 },
+        { freq: 220.00, gain: 0.30, decay: 1.8 }
+      ];
+      notes.forEach((n) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(n.freq, now);
+        gain.gain.setValueAtTime(n.gain, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + n.decay);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + n.decay + 0.1);
+      });
+    } catch (e) {}
+  }
+
   // Handle Dramatic 5-Second Countdown
   function handleRoundCountdown(data) {
     const overlay = $('#countdown-overlay');
@@ -800,15 +825,12 @@
     const fill = $('#allocation-fill');
     if (fill) {
       fill.style.width = pct + '%';
-      if (total === 100) {
+      if (total <= 100) {
         fill.classList.add('valid');
         fill.classList.remove('exceeded');
-      } else if (total > 100) {
-        fill.classList.remove('valid');
-        fill.classList.add('exceeded');
       } else {
         fill.classList.remove('valid');
-        fill.classList.remove('exceeded');
+        fill.classList.add('exceeded');
       }
     }
     if ($('#allocation-pct')) $('#allocation-pct').textContent = total;
@@ -816,13 +838,17 @@
     const hint = $('#allocation-hint');
     if (hint) {
       if (total > 100) {
-        hint.textContent = '⚠️ Exceeds 100% by ' + (total - 100) + '% (Reduce to lock in)';
+        hint.textContent = '⚠️ Allocations exceed 100% by ' + (total - 100) + '% (Reduce to lock in)';
         hint.style.color = 'var(--red)';
       } else if (total === 100) {
-        hint.textContent = '✓ 100% Allocated across 4 Ventures';
+        hint.textContent = '✓ 100% Invested in Ventures (0% Cash Retained)';
         hint.style.color = 'var(--green)';
+      } else if (total > 0) {
+        const cashLeft = 100 - total;
+        hint.textContent = `✓ ${total}% in Ventures | ${cashLeft}% Retained as Safe Cash`;
+        hint.style.color = 'var(--gold)';
       } else {
-        hint.textContent = `💡 ${total}% allocated — Allocate remaining ${100 - total}% across ventures`;
+        hint.textContent = '✓ 0% in Ventures | 100% Retained as Safe Cash';
         hint.style.color = 'var(--gold)';
       }
     }
@@ -850,10 +876,14 @@
       btn.innerHTML = '<span class="lock-icon">⚠️</span> Exceeds 100% (Reduce by ' + (total - 100) + '%)';
     } else if (total === 100) {
       btn.disabled = false;
-      btn.innerHTML = '<span class="lock-icon">🔒</span> Lock In Portfolio (100%)';
+      btn.innerHTML = '<span class="lock-icon">🔒</span> Lock In 100% Investment';
+    } else if (total > 0) {
+      const cashLeft = 100 - total;
+      btn.disabled = false;
+      btn.innerHTML = '<span class="lock-icon">🔒</span> Lock In (' + total + '% Invested, ' + cashLeft + '% Cash)';
     } else {
-      btn.disabled = true;
-      btn.innerHTML = '<span class="lock-icon">⚠️</span> Allocate 100% across Ventures (' + total + '% / 100%)';
+      btn.disabled = false;
+      btn.innerHTML = '<span class="lock-icon">🔒</span> Lock In 0% (Keep 100% Cash)';
     }
   }
 
@@ -864,8 +894,8 @@
       return;
     }
     const total = allocations.reduce((s, v) => s + v, 0);
-    if (total !== 100) {
-      toast('Please allocate exactly 100% across the 4 startups before locking in (currently ' + total + '%)', 'error');
+    if (total < 0 || total > 100) {
+      toast('Allocations cannot exceed 100% (currently ' + total + '%)', 'error');
       return;
     }
 
@@ -879,7 +909,8 @@
       updateLockButton();
       $$('.invest-slider').forEach((s) => (s.disabled = true));
       $$('.invest-pct-input').forEach((s) => (s.disabled = true));
-      toast('Portfolio locked in! (100% Invested across 4 Ventures) 📈', 'success');
+      const cashLeft = 100 - total;
+      toast(`Portfolio locked in! (${total}% Invested, ${cashLeft}% Cash Retained) 📈`, 'success');
       showWaitingResults();
     } catch (e) {
       btn.disabled = false;
@@ -894,6 +925,8 @@
     if (!container) return;
     container.innerHTML = '';
 
+    const total = allocations.reduce((s, v) => s + v, 0);
+    const cashPct = 100 - total;
     const base = capital > 0 ? capital : (startingCapital || 10000);
 
     companies.forEach((company, i) => {
@@ -907,6 +940,20 @@
       `;
       container.appendChild(row);
     });
+
+    if (cashPct > 0) {
+      const cashAmt = Math.round((base * cashPct) / 100);
+      const cashRow = document.createElement('div');
+      cashRow.className = 'invest-summary-row';
+      cashRow.style.borderTop = '1px dashed rgba(255,255,255,0.15)';
+      cashRow.style.paddingTop = '8px';
+      cashRow.style.marginTop = '6px';
+      cashRow.innerHTML = `
+        <span class="invest-summary-name">💰 Retained Safe Cash</span>
+        <span class="invest-summary-value" style="color:var(--gold);">${cashPct}% (${formatCurrency(cashAmt)})</span>
+      `;
+      container.appendChild(cashRow);
+    }
 
     showScreen('waiting-results');
   }
@@ -1190,7 +1237,7 @@
 
       if (timerSeconds <= 0 && !locked && gameState && gameState.endsWith('_invest')) {
         const totalAlloc = allocations.reduce((s, v) => s + v, 0);
-        if (totalAlloc === 100) {
+        if (totalAlloc > 0 && totalAlloc <= 100) {
           lockInvestment();
         } else {
           toast("⏰ Time's up! Zero allocations made — holding 100% Cash.", 'info');
@@ -1213,6 +1260,7 @@
 
     socket.on('round_ended_buffer', (data) => {
       if (data && data.round) currentRound = data.round;
+      playRoundEndChime();
       updateBufferScreen();
       showScreen('round-buffer');
     });
