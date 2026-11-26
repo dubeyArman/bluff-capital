@@ -501,6 +501,7 @@
         <div class="state-badge" id="game-state-badge">WAITING</div>
         <button type="button" class="btn btn-gold" id="btn-show-stage-lb" onclick="setProjectorView('leaderboard')" style="box-shadow:0 0 15px rgba(245,166,35,0.4);">🏆 SHOW LEADERBOARD ON STAGE</button>
         <button type="button" class="btn btn-outline" id="btn-resume-stage-game" onclick="setProjectorView('game')">📽️ RETURN TO GAME ON STAGE</button>
+        <button type="button" class="btn btn-gold" id="btn-top-thankyou" onclick="triggerThankYou()" style="background:linear-gradient(135deg, #ec4899, #8b5cf6); border-color:#ec4899; color:#fff; font-weight:700;">🎉 DISPLAY THANK YOU</button>
         <a href="/" target="_blank" class="btn btn-outline">📱 Player App</a>
         <a href="/projector" target="_blank" class="btn btn-outline">📽️ Open Projector View</a>
         <button class="btn btn-outline" id="btn-export-csv">📥 Export CSV</button>
@@ -655,36 +656,19 @@
       <button class="btn btn-red" style="margin-left:auto;" id="btn-reset">🔄 Reset Entire Game</button>
     </div>
 
-    <!-- Live Pitch & Hint Presentation Controls Strip -->
-    <div class="pitch-control-strip">
-      <div class="pitch-strip-header">
-        <div class="pitch-strip-title">
-          <span>🎙️ Live Stage Pitch & Hint Visibility</span>
-          <span class="pitch-status-pill" id="pitch-status-badge">🟡 Hidden (Live Presentation Mode)</span>
+    <!-- Tournament Finale & Celebration Strip -->
+    <div class="finale-control-strip" style="background:linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95)); border:2px solid rgba(236, 72, 153, 0.45); border-radius:16px; padding:1.25rem 1.75rem; margin-bottom:1.5rem; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1.25rem; box-shadow:0 8px 32px rgba(0,0,0,0.37);">
+      <div>
+        <div style="display:flex; align-items:center; gap:0.6rem; font-family:'Poppins',sans-serif; font-weight:800; font-size:1.15rem; color:#ec4899;">
+          <span>🎉</span> TOURNAMENT FINALE &amp; PARTICIPANT ACKNOWLEDGEMENT
         </div>
-        <div class="pitch-strip-sub">Control when participants and projector can read venture pitches & market signals</div>
+        <div style="font-size:0.85rem; color:var(--gray); margin-top:0.25rem;">
+          Display celebratory "Thank You for Playing" screen on both the Stage Projector and all Participant mobile screens after tournament results are revealed.
+        </div>
       </div>
-      <div class="pitch-btn-group">
-        <button type="button" class="btn-pitch-mode" id="btn-pitch-auto" title="Pitches & hints reveal automatically when round countdown begins">
-          <span class="btn-pitch-icon">🚀</span>
-          <span class="btn-pitch-text">
-            <strong>1. Show from Start</strong>
-            <small>Auto with countdown</small>
-          </span>
-        </button>
-        <button type="button" class="btn-pitch-mode active" id="btn-pitch-hide" title="Keep pitches & hints hidden so players listen to the live speaker">
-          <span class="btn-pitch-icon">🤫</span>
-          <span class="btn-pitch-text">
-            <strong>2. Don't Show Now</strong>
-            <small>Mask on phones & stage</small>
-          </span>
-        </button>
-        <button type="button" class="btn-pitch-mode btn-pitch-highlight" id="btn-pitch-show" title="Reveal pitches & hints immediately on click!">
-          <span class="btn-pitch-icon">📢</span>
-          <span class="btn-pitch-text">
-            <strong>3. Show Pitches Now</strong>
-            <small>Instant live reveal</small>
-          </span>
+      <div>
+        <button type="button" class="btn btn-gold" id="btn-trigger-thankyou" onclick="triggerThankYou()" style="background:linear-gradient(135deg, #ec4899, #8b5cf6); border-color:#ec4899; color:#fff; font-weight:700; padding:0.85rem 1.75rem; font-size:1rem; box-shadow:0 0 25px rgba(236, 72, 153, 0.4); border-radius:12px; cursor:pointer;">
+          🎉 Display "Thank You for Playing"
         </button>
       </div>
     </div>
@@ -1199,60 +1183,16 @@
       } catch (e) {}
     });
 
-    // Pitch Presentation Visibility Controls (⚡ Instant Optimistic Feedback)
-    async function setPitchAction(action) {
-      if (action === 'auto') {
-        currentPitchMode = 'auto';
-      } else if (action === 'hide') {
-        currentPitchMode = 'manual';
-        currentPitchVisible = false;
-      } else if (action === 'show') {
-        currentPitchVisible = true;
-      }
-      updatePitchButtonsUI();
-
+    // Tournament Finale Trigger
+    window.triggerThankYou = async function() {
+      if (!confirm('Broadcast "Thank You for Playing" celebratory screen to the Stage Projector and all Participant phones?')) return;
       try {
-        const res = await hostApi('POST', '/pitch-control', { action });
-        currentPitchMode = res.pitchMode;
-        currentPitchVisible = res.pitchVisible;
-        updatePitchButtonsUI();
-        toast(res.message, 'success');
+        const res = await hostApi('POST', '/thank-you');
+        toast(res.message || '🎉 Thank You for Playing screen broadcast!', 'success');
       } catch (e) {
-        updatePitchButtonsUI();
+        toast('Failed to trigger Thank You screen: ' + e.message, 'error');
       }
-    }
-
-    function updatePitchButtonsUI() {
-      const badge = $('#pitch-status-badge');
-      const btnAuto = $('#btn-pitch-auto');
-      const btnHide = $('#btn-pitch-hide');
-      const btnShow = $('#btn-pitch-show');
-
-      if (btnAuto) btnAuto.classList.toggle('active', currentPitchMode === 'auto');
-      if (btnHide) btnHide.classList.toggle('active', currentPitchMode === 'manual' && !currentPitchVisible);
-      if (btnShow) btnShow.classList.toggle('active', currentPitchVisible);
-
-      if (badge) {
-        if (currentPitchVisible) {
-          badge.className = 'pitch-status-pill visible';
-          badge.textContent = '🟢 Visible to Players & Stage';
-        } else {
-          badge.className = 'pitch-status-pill';
-          badge.textContent = currentPitchMode === 'auto' ? '⏳ Auto-Reveal on Countdown' : '🟡 Hidden (Live Pitch Mode)';
-        }
-      }
-    }
-
-    $('#btn-pitch-auto').addEventListener('click', () => setPitchAction('auto'));
-    $('#btn-pitch-hide').addEventListener('click', () => setPitchAction('hide'));
-    $('#btn-pitch-show').addEventListener('click', () => setPitchAction('show'));
-
-    // Real-time Socket sync
-    socket.on('pitch_visibility_change', (data) => {
-      if (data.pitchMode !== undefined) currentPitchMode = data.pitchMode;
-      if (data.pitchVisible !== undefined) currentPitchVisible = data.pitchVisible;
-      updatePitchButtonsUI();
-    });
+    };
     socket.on('round_countdown', (data) => {
       const btnNext = $('#btn-next');
       if (data.seconds > 0) {

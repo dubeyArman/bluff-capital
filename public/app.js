@@ -185,6 +185,10 @@
         timerSeconds = data.seconds;
         updateTimerDisplay(timerSeconds);
       }
+      if (data.projectorView === 'thankyou') {
+        showThankYouScreen();
+        return data;
+      }
       // If game state changed and team is in active session, auto navigate!
       if (teamId && prevGameState && prevGameState !== data.state) {
         navigateByState();
@@ -1079,6 +1083,22 @@
     showScreen('gameover');
   }
 
+  // ---- Celebratory Thank You for Playing Screen ----
+  function showThankYouScreen() {
+    if ($('#ty-team-name')) $('#ty-team-name').textContent = teamName || 'Your Syndicate';
+    if ($('#ty-leader-name')) $('#ty-leader-name').textContent = leaderName ? 'Leader: ' + leaderName : '';
+    if ($('#ty-enrollment')) $('#ty-enrollment').textContent = enrollmentNo ? 'Enrollment: ' + enrollmentNo : '';
+    if ($('#ty-final-capital')) {
+      if (capital < 0) {
+        $('#ty-final-capital').innerHTML = `<span style="color:var(--red);">${formatCurrency(capital)}</span> <span style="font-size:0.85rem;color:var(--red);background:rgba(239,68,68,0.2);padding:2px 8px;border-radius:6px;border:1px solid var(--red);font-weight:700;">DEBT</span>`;
+      } else {
+        $('#ty-final-capital').textContent = formatCurrency(capital);
+      }
+    }
+    showScreen('thankyou');
+    startConfetti();
+  }
+
   // ---- Confetti Canvas ----
   function startConfetti() {
     const canvas = $('#confetti-canvas');
@@ -1269,6 +1289,10 @@
       gameState = 'game_over';
       if (data && data.leaderboard) leaderboard = data.leaderboard;
       showGameOver();
+    });
+
+    socket.on('show_thank_you', () => {
+      showThankYouScreen();
     });
 
     socket.on('disconnect', () => {

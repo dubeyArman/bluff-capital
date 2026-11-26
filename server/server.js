@@ -308,8 +308,8 @@ let countdownRemaining = 0;
 let isCountingDown = false;
 let countdownInterval = null;
 let isPaused = false;
-let pitchMode = 'manual';
-let pitchVisible = false;
+let pitchMode = 'auto';
+let pitchVisible = true;
 let roundStatuses = { 1: 'pending', 2: 'pending', 3: 'pending', 4: 'pending' };
 
 // ─── State Persistence Engine with Vercel Blob & Local Fallback ──────────────
@@ -466,11 +466,8 @@ function checkAutoTransitions() {
 loadStateFromDisk();
 
 function updatePitchVisibilityOnRoundStart() {
-  if (pitchMode === 'auto') {
-    pitchVisible = true;
-  } else {
-    pitchVisible = false;
-  }
+  pitchMode = 'auto';
+  pitchVisible = true;
 }
 
 function generateCode() {
@@ -1322,6 +1319,8 @@ app.post(['/api/host/pitch-control', '/host/pitch-control', '/pitch-control'], (
 // ─── Round Countdown Engine (5 4 3 2 1 Dramatic Intro) ──────────────────────
 function startRoundCountdown(targetState, onComplete) {
   if (countdownInterval) clearInterval(countdownInterval);
+  projectorView = 'auto';
+  io.emit('resume_projector_game', { state: targetState });
   const roundNum = parseInt(targetState.split('_')[1], 10) || 1;
   countdownRoundNum = roundNum;
   countdownStartedAt = Date.now();
@@ -1481,12 +1480,15 @@ app.post(['/api/host/round/start', '/host/round/start', '/round/start'], async (
 
   const targetState = `round_${roundNum}_invest`;
   roundStatuses[roundNum] = 'countdown';
+  projectorView = 'auto';
+  io.emit('resume_projector_game', { state: targetState });
   updatePitchVisibilityOnRoundStart();
   io.emit('pitch_visibility_change', { pitchVisible, pitchMode });
 
   startRoundCountdown(targetState, () => {
     gameState = targetState;
     roundStatuses[roundNum] = 'active';
+    projectorView = 'auto';
     for (const team of teams.values()) {
       team.lockedIn = false;
     }
@@ -1627,6 +1629,16 @@ app.post(['/api/host/projector/view', '/host/projector/view'], async (req, res) 
   }
   broadcastState();
   return res.json({ success: true, projectorView });
+});
+
+// Dedicated Host Trigger: Thank You for Playing celebratory broadcast
+app.post(['/api/host/thank-you', '/host/thank-you', '/thank-you'], async (req, res) => {
+  if (!verifyHost(req, res)) return;
+  projectorView = 'thankyou';
+  io.emit('show_thank_you', { message: 'Thank You for Playing!' });
+  broadcastState();
+  saveStateToRemote();
+  return res.json({ success: true, message: '🎉 "Thank You for Playing" screen broadcast to all screens!' });
 });
 
 // Host: Set Principle Starting Capital / Allocate Funds (Before round or tournament)

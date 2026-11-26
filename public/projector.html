@@ -588,6 +588,28 @@
         STAND BY FOR MARKET REVEAL &amp; STANDINGS
       </div>
     </div>
+
+    <!-- VIEW 6: STAGE THANK YOU FOR PLAYING (CELEBRATORY FINALE) -->
+    <div id="view-thankyou" style="display:none;height:100%;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:2rem;">
+      <div style="font-size:6rem;margin-bottom:1rem;animation:stagePulsePop 2s infinite ease-in-out;">🏆</div>
+      <h1 style="font-family:'Poppins',sans-serif;font-size:4.5rem;font-weight:900;background:linear-gradient(135deg, #f5a623 0%, #ffd700 50%, #ffffff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px;margin-bottom:0.75rem;text-shadow:0 0 40px rgba(245,166,35,0.4);">
+        THANK YOU FOR PLAYING!
+      </h1>
+      <p style="font-family:'Poppins',sans-serif;font-size:1.75rem;font-weight:700;color:var(--gold);letter-spacing:4px;text-transform:uppercase;margin-bottom:2rem;">
+        BLUFF CAPITAL TOURNAMENT CONCLUDED
+      </p>
+      <div style="max-width:850px;background:linear-gradient(135deg, rgba(30,41,59,0.95), rgba(15,23,42,0.95));border:2px solid rgba(245,166,35,0.5);border-radius:24px;padding:2rem 3rem;box-shadow:0 25px 60px rgba(0,0,0,0.8), 0 0 40px rgba(245,166,35,0.25);margin-bottom:2.5rem;">
+        <p style="font-size:1.4rem;color:#f8fafc;line-height:1.7;margin-bottom:1rem;">
+          Congratulations to all syndicate traders, strategists, and bluff hunters! You explored high-stakes investments, analyzed market signals, and called out the boldest venture bluffs!
+        </p>
+        <div style="font-family:'Poppins',sans-serif;font-size:1.15rem;color:var(--green);font-weight:700;letter-spacing:1px;">
+          ⭐ Outstanding Strategic Vision &bull; Master Venture Capitalists &bull; Fair Play ⭐
+        </div>
+      </div>
+      <div style="font-family:'Poppins',sans-serif;font-size:1.2rem;color:var(--gray);letter-spacing:2px;">
+        BLUFF CAPITAL &copy; 2026 &bull; HIGH STAKES VENTURE SIMULATION
+      </div>
+    </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -623,6 +645,8 @@
       $('#view-leaderboard').style.display = 'none';
       const bufView = $('#view-buffer');
       if (bufView) bufView.style.display = 'none';
+      const tyView = $('#view-thankyou');
+      if (tyView) tyView.style.display = 'none';
 
       const v = $('#view-' + viewId);
       if (v) v.style.display = 'flex';
@@ -994,9 +1018,15 @@
       gameState = data.state;
       if (data.round) currentRound = data.round;
       if (data.pitchVisible !== undefined) pitchVisible = !!data.pitchVisible;
-      if (data.projectorView === 'leaderboard') {
+
+      // When an investment round starts, ALWAYS reset projectorView to auto so invest screen is visible!
+      if (gameState && gameState.endsWith('_invest')) {
+        currentProjectorView = 'auto';
+      } else if (data.projectorView === 'leaderboard') {
         currentProjectorView = 'leaderboard';
-      } else if (data.projectorView === 'game') {
+      } else if (data.projectorView === 'thankyou') {
+        currentProjectorView = 'thankyou';
+      } else if (data.projectorView === 'auto' || data.projectorView === 'game') {
         currentProjectorView = 'auto';
       }
 
@@ -1017,7 +1047,10 @@
       const pct = tot > 0 ? (sub / tot) * 100 : 0;
       $('#stage-progress-fill').style.width = pct + '%';
 
-      if (currentProjectorView === 'leaderboard') {
+      if (currentProjectorView === 'thankyou') {
+        switchView('thankyou');
+        triggerConfetti();
+      } else if (currentProjectorView === 'leaderboard' && !(gameState && gameState.endsWith('_invest'))) {
         switchView('leaderboard');
       } else {
         if (gameState === 'waiting') {
@@ -1099,6 +1132,12 @@
       if (data && data.isFinal) triggerConfetti();
     });
 
+    socket.on('show_thank_you', () => {
+      currentProjectorView = 'thankyou';
+      switchView('thankyou');
+      triggerConfetti();
+    });
+
     socket.on('resume_projector_game', () => {
       currentProjectorView = 'auto';
       if (gameState === 'waiting') {
@@ -1158,18 +1197,28 @@
         }
       }
 
-      if (data.projectorView === 'leaderboard') {
+      if (data.state && data.state.endsWith('_invest')) {
+        currentProjectorView = 'auto';
+      } else if (data.projectorView === 'leaderboard') {
         currentProjectorView = 'leaderboard';
-      } else if (data.projectorView === 'game') {
+      } else if (data.projectorView === 'thankyou') {
+        currentProjectorView = 'thankyou';
+      } else if (data.projectorView === 'game' || data.projectorView === 'auto') {
         currentProjectorView = 'auto';
       }
 
-      if (currentProjectorView === 'leaderboard') {
+      if (currentProjectorView === 'thankyou') {
+        switchView('thankyou');
+        triggerConfetti();
+        return;
+      }
+
+      if (currentProjectorView === 'leaderboard' && !(data.state && data.state.endsWith('_invest'))) {
         switchView('leaderboard');
         return;
       }
 
-      if (data.state !== gameState) {
+      if (data.state !== gameState || (data.state && data.state.endsWith('_invest'))) {
         gameState = data.state;
         if (gameState === 'waiting') {
           switchView('lobby');
