@@ -513,6 +513,8 @@ function getSubmittedCount() {
 
 function getLeaderboard() {
   const roundNum = currentRoundIndex();
+  const activeOrLastRound = roundNum || (gameState === 'game_over' ? 4 : 1);
+
   return [...teams.values()]
     .map((t) => {
       const isSubmitted = roundNum ? !!t.investments[roundNum] : false;
@@ -523,6 +525,22 @@ function getLeaderboard() {
           change = Math.round(((last.capitalAfter - last.capitalBefore) / Math.abs(last.capitalBefore)) * 100);
         }
       }
+
+      // Option 4: Lock-in Speed Tracking
+      // Earlier timestamp = submitted portfolio faster under pressure
+      const targetRoundLockTime = (t.submissionTimestamps && t.submissionTimestamps[activeOrLastRound])
+        || t.lastSubmittedAt
+        || Infinity;
+
+      let totalLockTime = 0;
+      if (t.submissionTimestamps) {
+        for (let r = 1; r <= 4; r++) {
+          totalLockTime += (t.submissionTimestamps[r] || 9999999999999);
+        }
+      } else {
+        totalLockTime = Infinity;
+      }
+
       return {
         teamId: t.id,
         id: t.id,
@@ -534,10 +552,31 @@ function getLeaderboard() {
         submitted: isSubmitted,
         change,
         rank: 0,
+        targetRoundLockTime,
+        totalLockTime,
+        createdAt: t.createdAt || 0,
       };
     })
-    .sort((a, b) => b.capital - a.capital)
-    .map((t, i) => ({ ...t, rank: i + 1 }));
+    .sort((a, b) => {
+      // 1. Primary Ranking: Final Capital (highest capital wins)
+      if (b.capital !== a.capital) {
+        return b.capital - a.capital;
+      }
+      // 2. Option 4 Tie-Breaker: Lock-in Speed in active / final round (earlier submission wins)
+      if (a.targetRoundLockTime !== b.targetRoundLockTime) {
+        return a.targetRoundLockTime - b.targetRoundLockTime;
+      }
+      // 3. Secondary Tie-Breaker: Cumulative lock-in speed across all tournament rounds
+      if (a.totalLockTime !== b.totalLockTime) {
+        return a.totalLockTime - b.totalLockTime;
+      }
+      // 4. Final Fallback: Earlier Registration Order
+      return (a.createdAt || 0) - (b.createdAt || 0);
+    })
+    .map((t, i) => {
+      const { targetRoundLockTime, totalLockTime, createdAt, ...rest } = t;
+      return { ...rest, rank: i + 1 };
+    });
 }
 
 function broadcastState() {
@@ -687,10 +726,15 @@ function autoLockInvestments() {
   // If timer expires, any team that did NOT submit is treated as having held 100% Cash!
   // They do NOT lose capital to the bluff, nor do they gain equity returns.
   // Their capital stays completely intact.
+  const lockTime = Date.now();
   for (const team of teams.values()) {
     if (!team.investments[roundNum]) {
       team.investments[roundNum] = null; // Stays null = 0% invested (100% Cash)
       team.lockedIn = true;
+      if (!team.submissionTimestamps) team.submissionTimestamps = {};
+      if (!team.submissionTimestamps[roundNum]) {
+        team.submissionTimestamps[roundNum] = lockTime;
+      }
     }
   }
   io.emit('timer_expired', { round: roundNum });
@@ -976,6 +1020,8 @@ app.post(['/api/register', '/register'], async (req, res) => {
     code,
     capital: STARTING_CAPITAL,
     investments: {},
+    submissionTimestamps: {},
+    lastSubmittedAt: null,
     history: [],
     lockedIn: false,
     createdAt: Date.now(),
@@ -1083,6 +1129,10 @@ app.post(['/api/invest', '/invest'], async (req, res) => {
 
   team.investments[roundNum] = allocations;
   team.lockedIn = true;
+  if (!team.submissionTimestamps) team.submissionTimestamps = {};
+  const lockTime = Date.now();
+  team.submissionTimestamps[roundNum] = lockTime;
+  team.lastSubmittedAt = lockTime;
 
   saveStateToRemote();
   broadcastState();
@@ -1674,6 +1724,8 @@ app.post(['/api/host/set-starting-capital', '/host/set-starting-capital', '/api/
     team.capital = STARTING_CAPITAL;
     team.isBankrupt = false;
     team.investments = {};
+    team.submissionTimestamps = {};
+    team.lastSubmittedAt = null;
     team.history = [];
     team.lockedIn = false;
   }
@@ -1766,6 +1818,8 @@ app.post(['/api/host/simulate', '/host/simulate', '/simulate'], (req, res) => {
       code: generateCode(),
       capital: STARTING_CAPITAL,
       investments: {},
+      submissionTimestamps: {},
+      lastSubmittedAt: null,
       history: [],
       lockedIn: false,
       createdAt: Date.now(),
@@ -1800,6 +1854,10 @@ app.post(['/api/host/simulate-investments', '/host/simulate-investments', '/simu
       ];
       team.investments[roundNum] = alloc;
       team.lockedIn = true;
+      if (!team.submissionTimestamps) team.submissionTimestamps = {};
+      if (!team.submissionTimestamps[roundNum]) {
+        team.submissionTimestamps[roundNum] = Date.now();
+      }
       count++;
     }
   }
