@@ -471,6 +471,138 @@
       50% { transform: scale(0.9); opacity: 1; }
       100% { transform: scale(1); opacity: 1; }
     }
+
+    /* Stage QR Code Modal Overlay (Available during all rounds) */
+    .stage-btn-qr {
+      background: linear-gradient(135deg, rgba(245, 166, 35, 0.22), rgba(245, 166, 35, 0.48));
+      border: 1.5px solid var(--gold);
+      color: #fff;
+      padding: 0.35rem 1rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      box-shadow: 0 0 15px rgba(245, 166, 35, 0.3);
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .stage-btn-qr:hover {
+      background: linear-gradient(135deg, rgba(245, 166, 35, 0.45), rgba(245, 166, 35, 0.75));
+      box-shadow: 0 0 25px rgba(245, 166, 35, 0.6);
+      transform: translateY(-1px);
+    }
+    .stage-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 15, 29, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      animation: stageModalFadeIn 0.22s ease-out;
+    }
+    @keyframes stageModalFadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .stage-modal-card {
+      background: linear-gradient(145deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98));
+      border: 2px solid rgba(245, 166, 35, 0.65);
+      border-radius: 28px;
+      padding: 2.25rem 3rem;
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9), 0 0 50px rgba(245, 166, 35, 0.3);
+      position: relative;
+    }
+    .stage-modal-close {
+      position: absolute;
+      top: 1.25rem;
+      right: 1.5rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-size: 1.5rem;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .stage-modal-close:hover {
+      background: rgba(239, 68, 68, 0.4);
+      border-color: var(--red);
+      transform: rotate(90deg);
+    }
+    .stage-modal-badge {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: var(--gold);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+    }
+    .stage-modal-title {
+      font-family: 'Poppins', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+    .stage-modal-subtitle {
+      font-size: 1rem;
+      color: var(--gray);
+      margin-bottom: 1.25rem;
+      line-height: 1.5;
+    }
+    .stage-modal-qr-wrap {
+      background: #ffffff;
+      border: 4px solid var(--gold);
+      border-radius: 22px;
+      padding: 1.25rem;
+      display: inline-block;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.6);
+    }
+    .stage-modal-qr {
+      width: 240px;
+      height: 240px;
+      display: block;
+      border-radius: 8px;
+    }
+    .stage-modal-url-box {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(245, 166, 35, 0.4);
+      border-radius: 12px;
+      padding: 0.75rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .stage-modal-url-text {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--gold);
+      word-break: break-all;
+    }
+    .stage-modal-footer-note {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.85rem;
+      color: var(--green);
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
   </style>
 </head>
 <body>
@@ -486,12 +618,38 @@
     </div>
   </div>
 
+  <!-- STAGE QR CODE MODAL OVERLAY (AVAILABLE IN ALL PHASES & ONGOING ROUNDS) -->
+  <div id="stage-qr-modal" class="stage-modal-backdrop" style="display:none;" onclick="if(event.target===this) toggleStageQrModal(false)">
+    <div class="stage-modal-card">
+      <button type="button" class="stage-modal-close" onclick="toggleStageQrModal(false)" title="Close">&times;</button>
+      <div class="stage-modal-badge">JOIN THE MARKET LIVE</div>
+      <h2 class="stage-modal-title">SCAN TO JOIN SYNDICATE</h2>
+      <p class="stage-modal-subtitle">Open your mobile camera &amp; scan the QR code to register your team and participate immediately!</p>
+      
+      <div class="stage-modal-qr-wrap">
+        <img id="stage-modal-qr-img" class="stage-modal-qr" src="/api/qrcode" alt="Join QR Code">
+      </div>
+
+      <div class="stage-modal-url-box">
+        <span style="font-size:0.85rem;color:var(--gray);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:0.25rem;">Or enter direct link on your phone:</span>
+        <div class="stage-modal-url-text" id="stage-modal-url">http://...</div>
+      </div>
+
+      <div class="stage-modal-footer-note">
+        ⚡ Active in every round &bull; Register once &bull; Capital automatically allocated
+      </div>
+    </div>
+  </div>
+
   <canvas id="stage-confetti"></canvas>
 
   <div class="stage-bar">
     <div class="stage-logo">BLUFF <span>CAPITAL</span></div>
     <div class="stage-round-pill" id="stage-round-badge">LOBBY</div>
     <div class="stage-stats">
+      <button type="button" class="stage-btn-qr" id="btn-stage-qr" onclick="toggleStageQrModal()" title="Show Join QR Code on Screen (Press 'Q')">
+        <span style="font-size:1.1rem;">📱</span> <span>Show QR</span>
+      </button>
       <div class="stage-stat-item">Teams: <strong id="stage-stat-teams">0</strong></div>
       <div class="stage-stat-item">Status: <strong id="stage-stat-status" style="color:var(--gold);">Waiting</strong></div>
       <a href="/host" target="_blank" class="stage-admin-link" title="Open Host / Admin Dashboard">⚙️ Admin</a>
@@ -635,21 +793,49 @@
       const qrImg = $('#stage-qr-img');
       if (urlBanner) urlBanner.textContent = joinUrl;
       if (qrImg) qrImg.src = '/api/qrcode?url=' + encodeURIComponent(joinUrl);
+
+      const modalUrl = $('#stage-modal-url');
+      const modalQr = $('#stage-modal-qr-img');
+      if (modalUrl) modalUrl.textContent = joinUrl;
+      if (modalQr) modalQr.src = '/api/qrcode?url=' + encodeURIComponent(joinUrl);
     }
     initServerInfo();
 
-    function switchView(viewId) {
-      $('#view-lobby').style.display = 'none';
-      $('#view-invest').style.display = 'none';
-      $('#view-reveal').style.display = 'none';
-      $('#view-leaderboard').style.display = 'none';
-      const bufView = $('#view-buffer');
-      if (bufView) bufView.style.display = 'none';
-      const tyView = $('#view-thankyou');
-      if (tyView) tyView.style.display = 'none';
+    window.toggleStageQrModal = function(forceState) {
+      const modal = $('#stage-qr-modal');
+      if (!modal) return;
+      const isVisible = modal.style.display === 'flex';
+      const next = forceState !== undefined ? !!forceState : !isVisible;
+      modal.style.display = next ? 'flex' : 'none';
+      if (next) {
+        initServerInfo();
+      }
+    };
 
-      const v = $('#view-' + viewId);
-      if (v) v.style.display = 'flex';
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        toggleStageQrModal(false);
+      } else if ((e.key === 'q' || e.key === 'Q') && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        toggleStageQrModal();
+      }
+    });
+
+    socket.on('projector_qr_toggle', (data) => {
+      toggleStageQrModal(data ? data.visible : undefined);
+    });
+
+    let currentActiveViewId = null;
+    function switchView(viewId) {
+      if (currentActiveViewId === viewId) {
+        const v = $('#view-' + viewId);
+        if (v && v.style.display === 'flex') return;
+      }
+      currentActiveViewId = viewId;
+      const views = ['lobby', 'invest', 'reveal', 'leaderboard', 'buffer', 'thankyou'];
+      views.forEach(id => {
+        const el = $('#view-' + id);
+        if (el) el.style.display = (id === viewId) ? 'flex' : 'none';
+      });
     }
 
     function updateProjectorPitches(visible) {
@@ -681,16 +867,42 @@
       });
     }
 
+    let lastRenderedInvestRound = null;
+    let lastRenderedInvestCompaniesJson = '';
+    let lastRenderedInvestPitch = null;
+
     function renderInvest(data) {
-      $('#stage-theme-title').textContent = data.theme || `Round ${currentRound}`;
-      const grid = $('#stage-companies-grid');
-      grid.innerHTML = '';
+      const r = data.round || currentRound;
+      const themeText = data.theme || `Round ${r}`;
+      if ($('#stage-theme-title') && $('#stage-theme-title').textContent !== themeText) {
+        $('#stage-theme-title').textContent = themeText;
+      }
 
       if (data.pitchVisible !== undefined) {
         pitchVisible = !!data.pitchVisible;
       }
-      currentCompanies = data.companies || [];
+      const newCompanies = data.companies || [];
+      if (newCompanies.length > 0) {
+        currentCompanies = newCompanies;
+      }
 
+      const grid = $('#stage-companies-grid');
+      const companiesJson = JSON.stringify(currentCompanies.map(c => c.name));
+
+      // Guard against tearing down DOM if cards for this round are already rendered
+      if (lastRenderedInvestRound === r && lastRenderedInvestCompaniesJson === companiesJson && grid.children.length === currentCompanies.length && currentCompanies.length > 0) {
+        if (lastRenderedInvestPitch !== pitchVisible) {
+          lastRenderedInvestPitch = pitchVisible;
+          updateProjectorPitches(pitchVisible);
+        }
+        return;
+      }
+
+      lastRenderedInvestRound = r;
+      lastRenderedInvestCompaniesJson = companiesJson;
+      lastRenderedInvestPitch = pitchVisible;
+
+      grid.innerHTML = '';
       if (currentCompanies.length > 0) {
         currentCompanies.forEach(c => {
           const card = document.createElement('div');
@@ -718,11 +930,18 @@
       }
     }
 
+    let lastRenderedRevealRound = null;
     function renderReveal(data) {
-      $('#stage-reveal-title').textContent = `ROUND ${data.round || currentRound} PERFORMANCE & BLUFF REVEAL`;
+      const r = data.round || currentRound;
+      $('#stage-reveal-title').textContent = `ROUND ${r} PERFORMANCE & BLUFF REVEAL`;
       const grid = $('#stage-reveal-grid');
-      grid.innerHTML = '';
 
+      if (lastRenderedRevealRound === r && grid.children.length > 0) {
+        return;
+      }
+      lastRenderedRevealRound = r;
+
+      grid.innerHTML = '';
       const companies = data.companies || [];
       companies.forEach((c, i) => {
         const isBluff = c.isBluff || c.returnPct === -100;
@@ -1218,9 +1437,11 @@
         return;
       }
 
-      if (data.state !== gameState || (data.state && data.state.endsWith('_invest'))) {
+      if (data.state !== gameState) {
         gameState = data.state;
         if (gameState === 'waiting') {
+          lastRenderedInvestRound = null;
+          lastRenderedRevealRound = null;
           switchView('lobby');
         } else if (gameState.endsWith('_invest')) {
           renderInvest(data);
@@ -1230,10 +1451,16 @@
           if (bufTitle) bufTitle.textContent = `ROUND ${currentRound || 1} CONCLUDED`;
           switchView('buffer');
         } else if (gameState.endsWith('_results')) {
+          renderReveal(data);
           switchView('reveal');
         } else if (gameState === 'game_over') {
           switchView('leaderboard');
           triggerConfetti();
+        }
+      } else if (gameState && gameState.endsWith('_invest')) {
+        renderInvest(data);
+        if (currentProjectorView !== 'leaderboard') {
+          switchView('invest');
         }
       }
     }

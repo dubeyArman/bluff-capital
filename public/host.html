@@ -499,6 +499,7 @@
       <div class="dash-logo">BLUFF <span>CAPITAL</span> &nbsp;•&nbsp; <small style="font-size:0.8rem;color:var(--gray);font-weight:400;">Host Management Suite</small></div>
       <div class="top-actions">
         <div class="state-badge" id="game-state-badge">WAITING</div>
+        <button type="button" class="btn btn-outline" id="btn-host-qr" onclick="toggleHostQrModal(true)" style="border-color:var(--gold);color:var(--gold);font-weight:700;">📱 SHOW QR</button>
         <button type="button" class="btn btn-gold" id="btn-show-stage-lb" onclick="setProjectorView('leaderboard')" style="box-shadow:0 0 15px rgba(245,166,35,0.4);">🏆 SHOW LEADERBOARD ON STAGE</button>
         <button type="button" class="btn btn-outline" id="btn-resume-stage-game" onclick="setProjectorView('game')">📽️ RETURN TO GAME ON STAGE</button>
         <button type="button" class="btn btn-gold" id="btn-top-thankyou" onclick="triggerThankYou()" style="background:linear-gradient(135deg, #ec4899, #8b5cf6); border-color:#ec4899; color:#fff; font-weight:700;">🎉 DISPLAY THANK YOU</button>
@@ -507,6 +508,34 @@
         <button class="btn btn-outline" id="btn-export-csv">📥 Export CSV</button>
       </div>
     </header>
+
+    <!-- HOST QR CODE MODAL OVERLAY -->
+    <div id="host-qr-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);z-index:99999;align-items:center;justify-content:center;padding:1.5rem;" onclick="if(event.target===this) toggleHostQrModal(false)">
+      <div style="background:linear-gradient(145deg, rgba(30,41,59,0.98), rgba(15,23,42,0.98));border:2px solid rgba(245,166,35,0.6);border-radius:24px;padding:2rem 2.5rem;text-align:center;max-width:540px;width:100%;box-shadow:0 25px 60px rgba(0,0,0,0.8),0 0 30px rgba(245,166,35,0.25);position:relative;">
+        <button type="button" onclick="toggleHostQrModal(false)" style="position:absolute;top:1rem;right:1.25rem;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:1.4rem;width:36px;height:36px;border-radius:50%;cursor:pointer;">&times;</button>
+        <div style="font-family:'Poppins',sans-serif;font-size:0.8rem;font-weight:800;color:var(--gold);letter-spacing:2px;text-transform:uppercase;">LIVE EVENT ONBOARDING</div>
+        <h2 style="font-family:'Poppins',sans-serif;font-size:1.6rem;font-weight:800;color:#fff;margin:0.4rem 0 0.8rem;">JOIN TOURNAMENT QR</h2>
+        <p style="font-size:0.9rem;color:var(--gray);margin-bottom:1.25rem;">Scan this QR with any mobile phone to enter the market immediately during any round.</p>
+        
+        <div style="background:#fff;border:3px solid var(--gold);border-radius:18px;padding:1rem;display:inline-block;margin-bottom:1.25rem;">
+          <img id="host-qr-img" src="/api/qrcode" alt="QR" style="width:200px;height:200px;display:block;">
+        </div>
+
+        <div style="background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:0.6rem 1rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
+          <span id="host-qr-url" style="font-family:monospace;font-size:0.85rem;color:var(--gold);word-break:break-all;">...</span>
+          <button type="button" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;" onclick="copyHostQrUrl()">📋 Copy</button>
+        </div>
+
+        <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+          <button type="button" class="btn btn-gold" id="btn-toggle-projector-qr" onclick="toggleProjectorQrRemote()" style="box-shadow:0 0 15px rgba(245,166,35,0.4);">
+            📽️ Toggle QR on Projector Screen
+          </button>
+          <button type="button" class="btn btn-outline" onclick="toggleHostQrModal(false)">
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- ALLOCATE STARTING CAPITAL / PRINCIPAL FUNDS TO ALL PARTICIPANTS -->
     <div class="capital-allocation-card" style="background:linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95)); border:2px solid rgba(245,166,35,0.4); border-radius:16px; padding:1.25rem 1.75rem; margin-bottom:1.5rem; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1.25rem; box-shadow:0 8px 32px rgba(0,0,0,0.37);">
@@ -1191,6 +1220,38 @@
         toast(res.message || '🎉 Thank You for Playing screen broadcast!', 'success');
       } catch (e) {
         toast('Failed to trigger Thank You screen: ' + e.message, 'error');
+      }
+    };
+
+    // Live Join QR Code Modal & Projector Remote Trigger
+    window.toggleHostQrModal = function(show) {
+      const modal = $('#host-qr-modal');
+      if (!modal) return;
+      const isVisible = modal.style.display === 'flex';
+      const next = show !== undefined ? !!show : !isVisible;
+      modal.style.display = next ? 'flex' : 'none';
+      if (next) {
+        const joinUrl = window.location.origin;
+        if ($('#host-qr-url')) $('#host-qr-url').textContent = joinUrl;
+        if ($('#host-qr-img')) $('#host-qr-img').src = '/api/qrcode?url=' + encodeURIComponent(joinUrl);
+      }
+    };
+
+    window.copyHostQrUrl = function() {
+      const url = window.location.origin;
+      navigator.clipboard.writeText(url).then(() => {
+        toast('Link copied to clipboard! 📋', 'success');
+      }).catch(() => {
+        toast(url, 'info');
+      });
+    };
+
+    window.toggleProjectorQrRemote = async function() {
+      try {
+        const res = await hostApi('POST', '/projector-qr-toggle', {});
+        toast(res.visible ? '📱 QR Code displayed on Stage Projector!' : '📱 QR Code hidden on Stage Projector.', 'success');
+      } catch (e) {
+        toast('Failed to toggle projector QR: ' + e.message, 'error');
       }
     };
     socket.on('round_countdown', (data) => {

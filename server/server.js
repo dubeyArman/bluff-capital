@@ -1641,6 +1641,20 @@ app.post(['/api/host/thank-you', '/host/thank-you', '/thank-you'], async (req, r
   return res.json({ success: true, message: '🎉 "Thank You for Playing" screen broadcast to all screens!' });
 });
 
+// Dedicated Host Trigger: Toggle / Show / Hide QR Modal on Stage Projector
+let isProjectorQrShowing = false;
+app.post(['/api/host/projector-qr-toggle', '/host/projector-qr-toggle'], (req, res) => {
+  if (!verifyHost(req, res)) return;
+  const { visible } = req.body || {};
+  if (visible !== undefined) {
+    isProjectorQrShowing = !!visible;
+  } else {
+    isProjectorQrShowing = !isProjectorQrShowing;
+  }
+  io.emit('projector_qr_toggle', { visible: isProjectorQrShowing });
+  return res.json({ success: true, visible: isProjectorQrShowing });
+});
+
 // Host: Set Principle Starting Capital / Allocate Funds (Before round or tournament)
 app.post(['/api/host/set-starting-capital', '/host/set-starting-capital', '/api/host/allocate-funds', '/host/allocate-funds'], async (req, res) => {
   if (!verifyHost(req, res)) return;
@@ -1688,6 +1702,7 @@ app.post(['/api/host/reset', '/host/reset', '/reset'], async (req, res) => {
   }
   stopTimer();
   gameState = 'waiting';
+  isProjectorQrShowing = false;
   teams = new Map();
   roundStatuses = { 1: 'pending', 2: 'pending', 3: 'pending', 4: 'pending' };
   calculatedRounds.clear();
