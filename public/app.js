@@ -23,6 +23,7 @@
   let leaderboard = [];
   let pitchVisible = false;
   let isCountdownActive = false;
+  let isTimerPaused = false;
 
   const roundThemes = {
     1: 'Campus Food Economy',
@@ -169,6 +170,25 @@
     }
   }
 
+  function setTimerPausedState(paused) {
+    isTimerPaused = !!paused;
+    const display = $('#timer-display');
+    const value = $('#timer-value');
+    const banner = $('#invest-paused-banner');
+    if (isTimerPaused) {
+      if (value) value.textContent = 'PAUSED';
+      if (display) display.classList.add('paused');
+      if (banner) banner.style.display = 'block';
+    } else {
+      if (display) display.classList.remove('paused');
+      if (banner) banner.style.display = 'none';
+      if (value && typeof timerSeconds === 'number' && timerSeconds > 0) {
+        value.textContent = timerSeconds;
+      }
+    }
+    updateLockButton();
+  }
+
   async function fetchState() {
     try {
       const data = await api('GET', '/state');
@@ -178,6 +198,9 @@
       if (data.round) currentRound = data.round;
       if (data.companies) companies = data.companies;
       if (data.pitchVisible !== undefined) pitchVisible = data.pitchVisible;
+      if (data.isPaused !== undefined) {
+        setTimerPausedState(!!data.isPaused);
+      }
       if (data.teamCount !== undefined) {
         if ($('#reg-team-count')) $('#reg-team-count').textContent = data.teamCount;
         if ($('#lobby-team-count')) $('#lobby-team-count').textContent = data.teamCount;
@@ -879,6 +902,16 @@
       return;
     }
 
+    if (isTimerPaused) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="lock-icon">⏸</span> Market Paused (Locking Frozen)';
+      btn.style.opacity = '0.7';
+      btn.style.borderColor = '#ef4444';
+      return;
+    }
+    btn.style.opacity = '';
+    btn.style.borderColor = '';
+
     if (total > 100) {
       btn.disabled = true;
       btn.innerHTML = '<span class="lock-icon">⚠️</span> Exceeds 100% (Reduce by ' + (total - 100) + '%)';
@@ -896,6 +929,10 @@
   }
 
   async function lockInvestment() {
+    if (isTimerPaused) {
+      toast('⏸ Market is paused by the host. Investments cannot be locked in right now.', 'warning');
+      return;
+    }
     if (capital <= 0) {
       showBankruptModal();
       toast('Oops! Better luck next time! Wait for tournament to end.', 'error');
@@ -1184,6 +1221,9 @@
         if ($('#reg-team-count')) $('#reg-team-count').textContent = data.teamCount;
         if ($('#lobby-team-count')) $('#lobby-team-count').textContent = data.teamCount;
       }
+      if (data.isPaused !== undefined) {
+        setTimerPausedState(!!data.isPaused);
+      }
 
       // Hide countdown overlay only if not actively animating
       if (!isCountdownActive) {
@@ -1218,17 +1258,13 @@
     });
 
     socket.on('timer_paused', (data) => {
-      const display = $('#timer-display');
-      const value = $('#timer-value');
-      if (value) value.textContent = 'PAUSED';
-      if (display) display.classList.add('paused');
-      toast('⏸ Host paused the investment timer.', 'info');
+      setTimerPausedState(true);
+      toast('⏸ Host paused the round. Portfolio lock-in is frozen.', 'warning');
     });
 
     socket.on('timer_resumed', (data) => {
-      const display = $('#timer-display');
-      if (display) display.classList.remove('paused');
-      toast('▶ Investment timer resumed!', 'success');
+      setTimerPausedState(false);
+      toast('▶ Round resumed! You can now lock in your portfolio.', 'success');
     });
 
     socket.on('timer_tick', (data) => {
@@ -1237,11 +1273,10 @@
       const value = $('#timer-value');
 
       if (data.isPaused) {
-        if (value) value.textContent = 'PAUSED';
-        if (display) display.classList.add('paused');
+        setTimerPausedState(true);
         return;
-      } else {
-        if (display) display.classList.remove('paused');
+      } else if (isTimerPaused) {
+        setTimerPausedState(false);
       }
 
       timerSeconds = data.seconds !== undefined ? data.seconds : data.remaining;

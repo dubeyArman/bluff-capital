@@ -1105,6 +1105,10 @@ app.post(['/api/invest', '/invest'], async (req, res) => {
     return res.status(400).json({ error: `Not in an investment phase. Current state: ${gameState}` });
   }
 
+  if (isPaused) {
+    return res.status(400).json({ error: 'The round timer is currently paused by the host. Portfolio lock-in is frozen until resumed.' });
+  }
+
   const roundNum = currentRoundIndex();
 
   if (team.investments[roundNum]) {
