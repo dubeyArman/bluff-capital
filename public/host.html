@@ -456,10 +456,12 @@
       padding: 0.5rem 0.75rem; font-size: 0.85rem; border-bottom: 1px solid rgba(51,65,85,0.4);
     }
     .lb-table tr:hover td { background: rgba(245,166,35,0.05); }
+    .lb-table tr.clash-row td { background: rgba(245, 166, 35, 0.08); border-bottom-color: rgba(245, 166, 35, 0.3); }
+    .lb-table tr.clash-row:hover td { background: rgba(245, 166, 35, 0.15); }
     .lb-rank { font-weight: 700; color: var(--gold); width: 45px; }
     .lb-team { font-weight: 600; }
     .lb-cap { font-family: 'Poppins', sans-serif; font-weight: 700; color: var(--green); }
-    .lb-status { text-align: center; width: 60px; }
+    .lb-status { text-align: left; }
 
     /* Toast */
     #host-toast {
@@ -764,10 +766,10 @@
             <table class="lb-table">
               <thead>
                 <tr>
-                  <th>#</th>
-                  <th>Team Fund</th>
-                  <th>Capital</th>
-                  <th>Locked</th>
+                  <th style="width: 10%;">#</th>
+                  <th style="width: 36%;">Team Fund</th>
+                  <th style="width: 24%;">Capital</th>
+                  <th style="width: 30%;">Lock Portfolio Timestamp</th>
                 </tr>
               </thead>
               <tbody id="lb-body">
@@ -1126,16 +1128,54 @@
         return;
       }
 
+      // Check for clashing capitals (ties) among participants
+      const capitalCounts = {};
+      lb.forEach(e => {
+        const cap = Math.round(e.capital);
+        capitalCounts[cap] = (capitalCounts[cap] || 0) + 1;
+      });
+
       lb.forEach((entry, i) => {
+        const cap = Math.round(entry.capital);
+        const isClashing = capitalCounts[cap] > 1;
+
+        let lockHtml = '<span style="color:var(--gray);font-size:0.8rem;">⏳ Waiting</span>';
+        if (entry.lockedAt) {
+          const d = new Date(entry.lockedAt);
+          const timeStr = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+          const msStr = '.' + String(d.getMilliseconds()).padStart(3, '0');
+          lockHtml = `
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <div style="display:inline-flex;align-items:center;gap:5px;font-family:monospace;font-size:0.82rem;font-weight:700;color:var(--gold);">
+                <span style="font-size:0.85rem;">🔒</span>
+                <span>${timeStr}</span><span style="font-size:0.7rem;color:var(--gray);">${msStr}</span>
+              </div>
+              ${isClashing ? '<div style="font-size:0.68rem;background:rgba(245,166,35,0.2);color:var(--gold);border:1px solid rgba(245,166,35,0.5);border-radius:4px;padding:1px 6px;display:inline-block;font-weight:700;width:fit-content;">⚡ Won Tie: Faster Lock</div>' : ''}
+            </div>
+          `;
+        } else if (entry.submitted) {
+          lockHtml = '<span style="color:var(--green);font-weight:700;font-size:0.82rem;">✅ Locked</span>';
+        }
+
         const tr = document.createElement('tr');
+        if (isClashing) {
+          tr.className = 'clash-row';
+        }
+
         tr.innerHTML = `
-          <td class="lb-rank">${entry.rank || i + 1}</td>
+          <td class="lb-rank">
+            <span>${entry.rank || i + 1}</span>
+            ${isClashing ? '<div style="font-size:0.65rem;color:var(--gold);font-weight:800;letter-spacing:0.5px;">TIED</div>' : ''}
+          </td>
           <td class="lb-team">
-            ${escapeHtml(entry.name)}
+            <div style="font-weight:700;color:#fff;">${escapeHtml(entry.name)}</div>
             <div style="font-size:0.75rem;color:var(--gray);">${escapeHtml(entry.leaderName || '')} ${entry.enrollmentNo ? '• Enr: ' + escapeHtml(entry.enrollmentNo) : ''}</div>
           </td>
-          <td class="lb-cap">₹${Math.round(entry.capital).toLocaleString('en-IN')}</td>
-          <td class="lb-status">${entry.submitted ? '✅' : '⏳'}</td>
+          <td class="lb-cap">
+            <div style="font-weight:700;color:var(--green);">₹${cap.toLocaleString('en-IN')}</div>
+            ${isClashing ? '<div style="font-size:0.68rem;color:var(--gold);font-weight:600;">⚠️ Capital Clash</div>' : ''}
+          </td>
+          <td class="lb-status">${lockHtml}</td>
         `;
         tbody.appendChild(tr);
       });

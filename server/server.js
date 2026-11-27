@@ -575,7 +575,12 @@ function getLeaderboard() {
     })
     .map((t, i) => {
       const { targetRoundLockTime, totalLockTime, createdAt, ...rest } = t;
-      return { ...rest, rank: i + 1 };
+      const validLockTime = (targetRoundLockTime && targetRoundLockTime !== Infinity) ? targetRoundLockTime : null;
+      return { 
+        ...rest, 
+        rank: i + 1,
+        lockedAt: validLockTime,
+      };
     });
 }
 
@@ -1874,7 +1879,7 @@ app.post(['/api/host/simulate-investments', '/host/simulate-investments', '/simu
 // Export CSV for Event Organizers
 app.get(['/api/host/export-csv', '/host/export-csv', '/export-csv'], (req, res) => {
   const lb = getLeaderboard();
-  let csv = 'Rank,Team Name,Team Leader,Enrollment Number,Final Capital,Round 1 Return,Round 2 Return,Round 3 Return,Round 4 Return\n';
+  let csv = 'Rank,Team Name,Team Leader,Enrollment Number,Final Capital,Lock Timestamp,Round 1 Return,Round 2 Return,Round 3 Return,Round 4 Return\n';
   lb.forEach((t) => {
     const team = teams.get(t.teamId);
     let r1 = '-', r2 = '-', r3 = '-', r4 = '-';
@@ -1896,7 +1901,12 @@ app.get(['/api/host/export-csv', '/host/export-csv', '/export-csv'], (req, res) 
         }
       });
     }
-    csv += `"${t.rank}","${t.name}","${t.leaderName || ''}","${team ? (team.enrollmentNo || '') : ''}","₹${t.capital}","${r1}","${r2}","${r3}","${r4}"\n`;
+    let lockStr = '-';
+    if (t.lockedAt) {
+      const d = new Date(t.lockedAt);
+      lockStr = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+    }
+    csv += `"${t.rank}","${t.name}","${t.leaderName || ''}","${team ? (team.enrollmentNo || '') : ''}","₹${t.capital}","${lockStr}","${r1}","${r2}","${r3}","${r4}"\n`;
   });
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', 'attachment; filename="bluff_capital_event_standings.csv"');
